@@ -14,7 +14,6 @@ import {
   ListItemText,
   useMediaQuery,
   useTheme,
-  Avatar,
   Tooltip,
   ListItemIcon,
   Divider,

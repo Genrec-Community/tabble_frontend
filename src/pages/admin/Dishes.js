@@ -17,7 +17,6 @@ import {
   Select,
   FormHelperText,
   Paper,
-  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -32,7 +31,6 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import FastfoodIcon from '@mui/icons-material/Fastfood';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import { adminService } from '../../services/api';
 

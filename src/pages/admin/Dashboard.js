@@ -85,7 +85,7 @@ const AdminDashboard = () => {
     // Refresh data every 60 seconds
     const interval = setInterval(fetchData, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [statusFilter]);
 
   // Fetch orders with optional status filter
   const fetchOrders = async (status = '') => {

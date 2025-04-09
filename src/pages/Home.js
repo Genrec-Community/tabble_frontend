@@ -12,7 +12,6 @@ import {
   Stack,
   Divider,
   useTheme,
-  useMediaQuery,
   Fade,
   Grow
 } from '@mui/material';
@@ -26,7 +25,6 @@ import StarIcon from '@mui/icons-material/Star';
 
 const Home = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   // Hero section background with gradient
   const heroBg = `linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%), url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1920&q=80')`;
