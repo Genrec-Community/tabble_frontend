@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
 import {
   Container,
   Typography,
@@ -14,8 +13,6 @@ import {
   TableHead,
   TableRow,
   Button,
-  Tabs,
-  Tab,
   Chip,
   FormControl,
   InputLabel,
@@ -35,6 +32,7 @@ import PendingIcon from '@mui/icons-material/Pending';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PaidIcon from '@mui/icons-material/Paid';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import { Link as RouterLink } from 'react-router-dom';
 import { adminService } from '../../services/api';
 
 const AdminDashboard = () => {
@@ -127,17 +125,17 @@ const AdminDashboard = () => {
   const handleMarkAsPaid = async (orderId) => {
     try {
       await adminService.markOrderAsPaid(orderId);
-      
+
       // Close dialog
       setOrderDetailsOpen(false);
-      
+
       // Show success message
       setSnackbar({
         open: true,
         message: 'Order marked as paid!',
         severity: 'success'
       });
-      
+
       // Refresh data
       const statsData = await adminService.getOrderStats();
       setStats(statsData);
@@ -154,9 +152,9 @@ const AdminDashboard = () => {
 
   // Format date
   const formatDate = (dateString) => {
-    const options = { 
-      year: 'numeric', 
-      month: 'short', 
+    const options = {
+      year: 'numeric',
+      month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
@@ -167,7 +165,7 @@ const AdminDashboard = () => {
   // Get status chip
   const getStatusChip = (status) => {
     let color, icon, label;
-    
+
     switch (status) {
       case 'pending':
         color = 'warning';
@@ -194,9 +192,9 @@ const AdminDashboard = () => {
         icon = null;
         label = status;
     }
-    
+
     return (
-      <Chip 
+      <Chip
         icon={icon}
         label={label}
         color={color}
@@ -218,23 +216,8 @@ const AdminDashboard = () => {
     <Container>
       <Box mb={4}>
         <Typography variant="h4" component="h1" fontWeight="bold" gutterBottom>
-          Admin Portal
+          Dashboard
         </Typography>
-        
-        <Tabs value={0} aria-label="admin tabs" sx={{ mb: 3 }}>
-          <Tab 
-            label="Dashboard" 
-            component={RouterLink} 
-            to="/admin" 
-            sx={{ fontWeight: 'medium' }}
-          />
-          <Tab 
-            label="Manage Dishes" 
-            component={RouterLink} 
-            to="/admin/dishes" 
-            sx={{ fontWeight: 'medium' }}
-          />
-        </Tabs>
       </Box>
 
       {/* Statistics */}
@@ -339,6 +322,9 @@ const AdminDashboard = () => {
                   transform: 'translateY(-5px)',
                 },
               }}
+              component={RouterLink}
+              to="/admin/completed-orders"
+              style={{ textDecoration: 'none' }}
             >
               <CardContent>
                 <Box display="flex" flexDirection="column" alignItems="center" textAlign="center">
@@ -363,7 +349,7 @@ const AdminDashboard = () => {
         <Typography variant="h5" component="h2" gutterBottom fontWeight="medium">
           Recent Orders
         </Typography>
-        
+
         <Box mb={3}>
           <FormControl variant="outlined" size="small" sx={{ minWidth: 200 }}>
             <InputLabel>Filter by Status</InputLabel>
@@ -427,8 +413,8 @@ const AdminDashboard = () => {
       </Paper>
 
       {/* Order Details Dialog */}
-      <Dialog 
-        open={orderDetailsOpen} 
+      <Dialog
+        open={orderDetailsOpen}
         onClose={handleCloseOrderDetails}
         maxWidth="md"
         fullWidth
@@ -526,8 +512,8 @@ const AdminDashboard = () => {
         <DialogActions>
           <Button onClick={handleCloseOrderDetails}>Close</Button>
           {selectedOrder && selectedOrder.status === 'payment_requested' && (
-            <Button 
-              variant="contained" 
+            <Button
+              variant="contained"
               color="success"
               startIcon={<PaidIcon />}
               onClick={() => handleMarkAsPaid(selectedOrder.id)}
@@ -545,8 +531,8 @@ const AdminDashboard = () => {
         onClose={() => setSnackbar({ ...snackbar, open: false })}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
-        <Alert 
-          onClose={() => setSnackbar({ ...snackbar, open: false })} 
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
           severity={snackbar.severity}
           variant="filled"
         >

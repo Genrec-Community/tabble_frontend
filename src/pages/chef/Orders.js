@@ -43,7 +43,7 @@ const ChefOrders = () => {
     message: '',
     severity: 'success'
   });
-  
+
   // Fetch pending orders
   const fetchPendingOrders = async () => {
     try {
@@ -60,16 +60,16 @@ const ChefOrders = () => {
       setLoading(false);
     }
   };
-  
+
   useEffect(() => {
     fetchPendingOrders();
-    
+
     // Refresh orders every 30 seconds
     const interval = setInterval(fetchPendingOrders, 30000);
-    
+
     return () => clearInterval(interval);
   }, []);
-  
+
   // Open confirm dialog
   const handleConfirmOpen = (orderId) => {
     setConfirmDialog({
@@ -77,7 +77,7 @@ const ChefOrders = () => {
       orderId
     });
   };
-  
+
   // Close confirm dialog
   const handleConfirmClose = () => {
     setConfirmDialog({
@@ -85,58 +85,58 @@ const ChefOrders = () => {
       open: false
     });
   };
-  
+
   // Mark order as completed
   const handleCompleteOrder = async () => {
     try {
       await chefService.completeOrder(confirmDialog.orderId);
-      
+
       // Close dialog
       handleConfirmClose();
-      
+
       // Show success message
       setSnackbar({
         open: true,
         message: 'Order marked as completed!',
         severity: 'success'
       });
-      
+
       // Refresh orders
       fetchPendingOrders();
     } catch (error) {
       console.error('Error completing order:', error);
-      
+
       // Show error message
       setSnackbar({
         open: true,
         message: 'Failed to complete order',
         severity: 'error'
       });
-      
+
       // Close dialog
       handleConfirmClose();
     }
   };
-  
+
   // Format date
   const formatDate = (dateString) => {
-    const options = { 
-      year: 'numeric', 
-      month: 'short', 
+    const options = {
+      year: 'numeric',
+      month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
     };
     return new Date(dateString).toLocaleString(undefined, options);
   };
-  
+
   // Calculate time elapsed
   const getTimeElapsed = (dateString) => {
     const orderTime = new Date(dateString);
     const now = new Date();
     const diffMs = now - orderTime;
     const diffMins = Math.floor(diffMs / 60000);
-    
+
     if (diffMins < 1) {
       return 'Just now';
     } else if (diffMins === 1) {
@@ -149,30 +149,30 @@ const ChefOrders = () => {
       return `${Math.floor(diffMins / 60)} hours ago`;
     }
   };
-  
+
   return (
     <Container>
       <Box mb={4}>
         <Typography variant="h4" component="h1" fontWeight="bold" gutterBottom>
           Chef Portal
         </Typography>
-        
+
         <Tabs value={1} aria-label="chef tabs" sx={{ mb: 3 }}>
-          <Tab 
-            label="Kitchen Dashboard" 
-            component={RouterLink} 
-            to="/chef" 
+          <Tab
+            label="Kitchen Dashboard"
+            component={RouterLink}
+            to="/chef"
             sx={{ fontWeight: 'medium' }}
           />
-          <Tab 
-            label="Pending Orders" 
-            component={RouterLink} 
-            to="/chef/orders" 
+          <Tab
+            label="Pending Orders"
+            component={RouterLink}
+            to="/chef/orders"
             sx={{ fontWeight: 'medium' }}
           />
         </Tabs>
       </Box>
-      
+
       <Box mb={4}>
         <Typography variant="h5" component="h2" gutterBottom fontWeight="medium">
           <Badge
@@ -184,7 +184,7 @@ const ChefOrders = () => {
             <Box component="span" mr={1}>Pending Orders</Box>
           </Badge>
         </Typography>
-        
+
         {loading ? (
           <Box display="flex" justifyContent="center" my={4}>
             <CircularProgress />
@@ -198,7 +198,7 @@ const ChefOrders = () => {
             {pendingOrders.map((order) => (
               <Grid item xs={12} key={order.id}>
                 <Zoom in={true} style={{ transitionDelay: '100ms' }}>
-                  <Card 
+                  <Card
                     sx={{
                       borderLeft: '4px solid',
                       borderColor: 'warning.main',
@@ -210,7 +210,7 @@ const ChefOrders = () => {
                           <Typography variant="h6" component="span">
                             Order #{order.id}
                           </Typography>
-                          <Chip 
+                          <Chip
                             label={`Table ${order.table_number}`}
                             color="primary"
                             size="small"
@@ -246,10 +246,10 @@ const ChefOrders = () => {
                       </Typography>
                       <List disablePadding>
                         {order.items.map((item) => (
-                          <ListItem 
-                            key={item.id} 
-                            disableGutters 
-                            sx={{ 
+                          <ListItem
+                            key={item.id}
+                            disableGutters
+                            sx={{
                               py: 1,
                               borderBottom: '1px dashed rgba(0, 0, 0, 0.1)'
                             }}
@@ -285,7 +285,7 @@ const ChefOrders = () => {
           </Grid>
         )}
       </Box>
-      
+
       {/* Confirm Dialog */}
       <Dialog open={confirmDialog.open} onClose={handleConfirmClose}>
         <DialogTitle>Confirm Action</DialogTitle>
@@ -296,9 +296,9 @@ const ChefOrders = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleConfirmClose}>Cancel</Button>
-          <Button 
-            variant="contained" 
-            color="success" 
+          <Button
+            variant="contained"
+            color="success"
             onClick={handleCompleteOrder}
             startIcon={<DoneAllIcon />}
           >
@@ -306,7 +306,7 @@ const ChefOrders = () => {
           </Button>
         </DialogActions>
       </Dialog>
-      
+
       {/* Snackbar */}
       <Snackbar
         open={snackbar.open}
@@ -314,8 +314,8 @@ const ChefOrders = () => {
         onClose={() => setSnackbar({ ...snackbar, open: false })}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
-        <Alert 
-          onClose={() => setSnackbar({ ...snackbar, open: false })} 
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
           severity={snackbar.severity}
           variant="filled"
         >

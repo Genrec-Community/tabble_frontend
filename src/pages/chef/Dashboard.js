@@ -27,14 +27,14 @@ const ChefDashboard = () => {
   const [totalItemsCount, setTotalItemsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         // Get pending orders
         const pendingOrders = await chefService.getPendingOrders();
         setPendingOrdersCount(pendingOrders.length);
-        
+
         // Calculate total items
         let totalItems = 0;
         pendingOrders.forEach(order => {
@@ -43,11 +43,11 @@ const ChefDashboard = () => {
           });
         });
         setTotalItemsCount(totalItems);
-        
+
         // Get completed orders count
         const completedData = await chefService.getCompletedOrdersCount();
         setCompletedOrdersCount(completedData.count);
-        
+
         setLoading(false);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -55,38 +55,44 @@ const ChefDashboard = () => {
         setLoading(false);
       }
     };
-    
+
     fetchDashboardData();
-    
+
     // Refresh data every 30 seconds
     const interval = setInterval(fetchDashboardData, 30000);
-    
+
     return () => clearInterval(interval);
   }, []);
-  
+
   return (
     <Container>
       <Box mb={4}>
         <Typography variant="h4" component="h1" fontWeight="bold" gutterBottom>
           Chef Portal
         </Typography>
-        
+
         <Tabs value={0} aria-label="chef tabs" sx={{ mb: 3 }}>
-          <Tab 
-            label="Kitchen Dashboard" 
-            component={RouterLink} 
-            to="/chef" 
+          <Tab
+            label="Kitchen Dashboard"
+            component={RouterLink}
+            to="/chef"
             sx={{ fontWeight: 'medium' }}
           />
-          <Tab 
-            label="Pending Orders" 
-            component={RouterLink} 
-            to="/chef/orders" 
+          <Tab
+            label="Pending Orders"
+            component={RouterLink}
+            to="/chef/orders"
+            sx={{ fontWeight: 'medium' }}
+          />
+          <Tab
+            label="Chef Analytics"
+            component={RouterLink}
+            to="/analysis/chef"
             sx={{ fontWeight: 'medium' }}
           />
         </Tabs>
       </Box>
-      
+
       <Alert severity="info" sx={{ mb: 4 }}>
         <Typography variant="subtitle1" fontWeight="medium">Welcome to the Chef Portal</Typography>
         <Typography variant="body2">
@@ -94,12 +100,12 @@ const ChefDashboard = () => {
           Use the "Pending Orders" tab to see orders that customers have placed and mark them as completed when ready.
         </Typography>
       </Alert>
-      
+
       <Box mb={4}>
         <Typography variant="h5" component="h2" gutterBottom fontWeight="medium">
           Today's Summary
         </Typography>
-        
+
         {loading ? (
           <Box display="flex" justifyContent="center" my={4}>
             <CircularProgress />
@@ -111,8 +117,8 @@ const ChefDashboard = () => {
         ) : (
           <Grid container spacing={3}>
             <Grid item xs={12} md={4}>
-              <Card 
-                sx={{ 
+              <Card
+                sx={{
                   height: '100%',
                   borderLeft: '4px solid',
                   borderColor: 'warning.main',
@@ -133,10 +139,10 @@ const ChefDashboard = () => {
                     <Typography variant="h6" component="div" color="text.secondary">
                       Pending Orders
                     </Typography>
-                    
-                    <Button 
-                      variant="outlined" 
-                      color="warning" 
+
+                    <Button
+                      variant="outlined"
+                      color="warning"
                       component={RouterLink}
                       to="/chef/orders"
                       sx={{ mt: 2 }}
@@ -147,10 +153,10 @@ const ChefDashboard = () => {
                 </CardContent>
               </Card>
             </Grid>
-            
+
             <Grid item xs={12} md={4}>
-              <Card 
-                sx={{ 
+              <Card
+                sx={{
                   height: '100%',
                   borderLeft: '4px solid',
                   borderColor: 'success.main',
@@ -171,10 +177,10 @@ const ChefDashboard = () => {
                     <Typography variant="h6" component="div" color="text.secondary">
                       Completed Orders
                     </Typography>
-                    
-                    <Button 
-                      variant="outlined" 
-                      color="success" 
+
+                    <Button
+                      variant="outlined"
+                      color="success"
                       disabled
                       sx={{ mt: 2, visibility: 'hidden' }}
                     >
@@ -184,10 +190,10 @@ const ChefDashboard = () => {
                 </CardContent>
               </Card>
             </Grid>
-            
+
             <Grid item xs={12} md={4}>
-              <Card 
-                sx={{ 
+              <Card
+                sx={{
                   height: '100%',
                   borderLeft: '4px solid',
                   borderColor: 'primary.main',
@@ -208,10 +214,10 @@ const ChefDashboard = () => {
                     <Typography variant="h6" component="div" color="text.secondary">
                       Total Items Prepared
                     </Typography>
-                    
-                    <Button 
-                      variant="outlined" 
-                      color="primary" 
+
+                    <Button
+                      variant="outlined"
+                      color="primary"
                       disabled
                       sx={{ mt: 2, visibility: 'hidden' }}
                     >
@@ -224,18 +230,18 @@ const ChefDashboard = () => {
           </Grid>
         )}
       </Box>
-      
+
       <Box my={5}>
         <Divider />
       </Box>
-      
+
       <Box textAlign="center" py={3}>
-        <Paper 
-          elevation={0} 
-          sx={{ 
-            p: 3, 
-            backgroundColor: '#f5f5f5', 
-            borderRadius: 2 
+        <Paper
+          elevation={0}
+          sx={{
+            p: 3,
+            backgroundColor: '#f5f5f5',
+            borderRadius: 2
           }}
         >
           <Box display="flex" justifyContent="center" mb={2}>
@@ -244,15 +250,26 @@ const ChefDashboard = () => {
           <Typography variant="h6" gutterBottom>
             Quick Actions
           </Typography>
-          <Button 
-            variant="contained" 
-            color="primary" 
-            component={RouterLink}
-            to="/chef/orders"
-            sx={{ mt: 2 }}
-          >
-            Manage Pending Orders
-          </Button>
+          <Box display="flex" justifyContent="center" gap={2}>
+            <Button
+              variant="contained"
+              color="primary"
+              component={RouterLink}
+              to="/chef/orders"
+              sx={{ mt: 2 }}
+            >
+              Manage Pending Orders
+            </Button>
+            <Button
+              variant="outlined"
+              color="primary"
+              component={RouterLink}
+              to="/analysis/chef"
+              sx={{ mt: 2 }}
+            >
+              View Performance Analytics
+            </Button>
+          </Box>
         </Paper>
       </Box>
     </Container>

@@ -26,10 +26,11 @@ import {
   Snackbar,
   Tabs,
   Tab,
-  Divider
+  Divider,
+  FormControlLabel,
+  Switch
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import { adminService } from '../../services/api';
@@ -38,10 +39,13 @@ const AdminDishes = () => {
   // State
   const [dishes, setDishes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState([]);
+  const [isNewCategory, setIsNewCategory] = useState(false);
   const [formValues, setFormValues] = useState({
     name: '',
     description: '',
     category: '',
+    new_category: '',
     price: '',
     quantity: '',
     image: null,
@@ -60,7 +64,15 @@ const AdminDishes = () => {
     dishName: ''
   });
 
-  const categories = ['Appetizer', 'Main Course', 'Dessert', 'Beverage'];
+  // Fetch categories
+  const fetchCategories = async () => {
+    try {
+      const response = await adminService.getCategories();
+      setCategories(response);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
 
   // Fetch dishes
   const fetchDishes = async () => {
@@ -82,6 +94,7 @@ const AdminDishes = () => {
 
   useEffect(() => {
     fetchDishes();
+    fetchCategories();
   }, []);
 
   // Handle form change
@@ -119,30 +132,46 @@ const AdminDishes = () => {
     }
   };
 
+  // Handle category toggle
+  const handleCategoryToggle = () => {
+    setIsNewCategory(!isNewCategory);
+    setFormValues({
+      ...formValues,
+      category: '',
+      new_category: ''
+    });
+  };
+
   // Validate form
   const validateForm = () => {
     const errors = {};
-    
+
     if (!formValues.name) {
       errors.name = 'Name is required';
     }
-    
-    if (!formValues.category) {
-      errors.category = 'Category is required';
+
+    if (isNewCategory) {
+      if (!formValues.new_category) {
+        errors.new_category = 'New category name is required';
+      }
+    } else {
+      if (!formValues.category) {
+        errors.category = 'Category is required';
+      }
     }
-    
+
     if (!formValues.price) {
       errors.price = 'Price is required';
     } else if (isNaN(formValues.price) || parseFloat(formValues.price) <= 0) {
       errors.price = 'Price must be a positive number';
     }
-    
+
     if (!formValues.quantity) {
       errors.quantity = 'Quantity is required';
     } else if (isNaN(formValues.quantity) || parseInt(formValues.quantity) < 0) {
       errors.quantity = 'Quantity must be a non-negative number';
     }
-    
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -150,49 +179,52 @@ const AdminDishes = () => {
   // Handle form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
-    
+
     try {
       setSubmitLoading(true);
-      
+
       const dishData = {
         name: formValues.name,
         description: formValues.description || '',
-        category: formValues.category,
+        category: isNewCategory ? formValues.new_category : formValues.category,
         price: parseFloat(formValues.price),
         quantity: parseInt(formValues.quantity)
       };
-      
+
       if (formValues.image) {
         dishData.image = formValues.image;
       }
-      
+
       await adminService.createDish(dishData);
-      
+
       // Reset form
       setFormValues({
         name: '',
         description: '',
         category: '',
+        new_category: '',
         price: '',
         quantity: '',
         image: null,
         imagePreview: null
       });
-      
+      setIsNewCategory(false);
+
       // Show success message
       setSnackbar({
         open: true,
         message: 'Dish added successfully!',
         severity: 'success'
       });
-      
-      // Refresh dishes
+
+      // Refresh dishes and categories
       fetchDishes();
-      
+      fetchCategories();
+
       setSubmitLoading(false);
     } catch (error) {
       console.error('Error adding dish:', error);
@@ -226,17 +258,17 @@ const AdminDishes = () => {
   const handleDeleteDish = async () => {
     try {
       await adminService.deleteDish(deleteDialog.dishId);
-      
+
       // Close dialog
       handleDeleteDialogClose();
-      
+
       // Show success message
       setSnackbar({
         open: true,
         message: 'Dish deleted successfully!',
         severity: 'success'
       });
-      
+
       // Refresh dishes
       fetchDishes();
     } catch (error) {
@@ -256,18 +288,30 @@ const AdminDishes = () => {
         <Typography variant="h4" component="h1" fontWeight="bold" gutterBottom>
           Admin Portal
         </Typography>
-        
+
         <Tabs value={1} aria-label="admin tabs" sx={{ mb: 3 }}>
-          <Tab 
-            label="Dashboard" 
-            component={RouterLink} 
-            to="/admin" 
+          <Tab
+            label="Dashboard"
+            component={RouterLink}
+            to="/admin"
             sx={{ fontWeight: 'medium' }}
           />
-          <Tab 
-            label="Manage Dishes" 
-            component={RouterLink} 
-            to="/admin/dishes" 
+          <Tab
+            label="Manage Dishes"
+            component={RouterLink}
+            to="/admin/dishes"
+            sx={{ fontWeight: 'medium' }}
+          />
+          <Tab
+            label="Manage Offers"
+            component={RouterLink}
+            to="/admin/offers"
+            sx={{ fontWeight: 'medium' }}
+          />
+          <Tab
+            label="Today's Special"
+            component={RouterLink}
+            to="/admin/specials"
             sx={{ fontWeight: 'medium' }}
           />
         </Tabs>
@@ -276,10 +320,10 @@ const AdminDishes = () => {
       <Grid container spacing={4}>
         {/* Dish Form */}
         <Grid item xs={12} md={4}>
-          <Paper 
-            elevation={2} 
-            sx={{ 
-              p: 3, 
+          <Paper
+            elevation={2}
+            sx={{
+              p: 3,
               borderRadius: 2,
               height: '100%'
             }}
@@ -287,9 +331,9 @@ const AdminDishes = () => {
             <Typography variant="h5" component="h2" gutterBottom fontWeight="medium">
               Add New Dish
             </Typography>
-            
+
             <Divider sx={{ mb: 3 }} />
-            
+
             <form onSubmit={handleSubmit}>
               <TextField
                 name="name"
@@ -303,7 +347,7 @@ const AdminDishes = () => {
                 helperText={formErrors.name}
                 required
               />
-              
+
               <TextField
                 name="description"
                 label="Description"
@@ -315,31 +359,58 @@ const AdminDishes = () => {
                 value={formValues.description}
                 onChange={handleFormChange}
               />
-              
-              <FormControl 
-                fullWidth 
-                margin="normal" 
-                error={!!formErrors.category}
-                required
-              >
-                <InputLabel>Category</InputLabel>
-                <Select
-                  name="category"
-                  label="Category"
-                  value={formValues.category}
+
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={isNewCategory}
+                    onChange={handleCategoryToggle}
+                    name="categoryToggle"
+                  />
+                }
+                label="Add New Category"
+                sx={{ mb: 2 }}
+              />
+
+              {isNewCategory ? (
+                <TextField
+                  name="new_category"
+                  label="New Category Name"
+                  variant="outlined"
+                  fullWidth
+                  margin="normal"
+                  value={formValues.new_category}
                   onChange={handleFormChange}
+                  error={!!formErrors.new_category}
+                  helperText={formErrors.new_category}
+                  required
+                />
+              ) : (
+                <FormControl
+                  fullWidth
+                  margin="normal"
+                  error={!!formErrors.category}
+                  required
                 >
-                  {categories.map((category) => (
-                    <MenuItem key={category} value={category}>
-                      {category}
-                    </MenuItem>
-                  ))}
-                </Select>
-                {formErrors.category && (
-                  <FormHelperText>{formErrors.category}</FormHelperText>
-                )}
-              </FormControl>
-              
+                  <InputLabel>Category</InputLabel>
+                  <Select
+                    name="category"
+                    label="Category"
+                    value={formValues.category}
+                    onChange={handleFormChange}
+                  >
+                    {categories.map((category) => (
+                      <MenuItem key={category} value={category}>
+                        {category}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  {formErrors.category && (
+                    <FormHelperText>{formErrors.category}</FormHelperText>
+                  )}
+                </FormControl>
+              )}
+
               <Grid container spacing={2}>
                 <Grid item xs={6}>
                   <TextField
@@ -374,13 +445,13 @@ const AdminDishes = () => {
                   />
                 </Grid>
               </Grid>
-              
+
               <Box mt={2}>
                 <Typography variant="subtitle1" gutterBottom>
                   Dish Image
                 </Typography>
-                <Box 
-                  sx={{ 
+                <Box
+                  sx={{
                     border: '1px dashed',
                     borderColor: formErrors.image ? 'error.main' : 'divider',
                     borderRadius: 1,
@@ -402,17 +473,17 @@ const AdminDishes = () => {
                     style={{ display: 'none' }}
                     onChange={handleImageChange}
                   />
-                  
+
                   {formValues.imagePreview ? (
                     <Box sx={{ width: '100%' }}>
-                      <img 
-                        src={formValues.imagePreview} 
-                        alt="Dish preview" 
+                      <img
+                        src={formValues.imagePreview}
+                        alt="Dish preview"
                         style={{ width: '100%', maxHeight: '200px', objectFit: 'contain' }}
                       />
-                      <Button 
-                        variant="outlined" 
-                        size="small" 
+                      <Button
+                        variant="outlined"
+                        size="small"
                         sx={{ mt: 1 }}
                         startIcon={<PhotoCameraIcon />}
                       >
@@ -432,7 +503,7 @@ const AdminDishes = () => {
                   <FormHelperText error>{formErrors.image}</FormHelperText>
                 )}
               </Box>
-              
+
               <Box mt={3}>
                 <Button
                   type="submit"
@@ -449,13 +520,13 @@ const AdminDishes = () => {
             </form>
           </Paper>
         </Grid>
-        
+
         {/* Dish List */}
         <Grid item xs={12} md={8}>
           <Typography variant="h5" component="h2" gutterBottom fontWeight="medium">
             All Dishes
           </Typography>
-          
+
           {loading ? (
             <Box display="flex" justifyContent="center" my={4}>
               <CircularProgress />
@@ -466,8 +537,8 @@ const AdminDishes = () => {
             <Grid container spacing={3}>
               {dishes.map((dish) => (
                 <Grid item xs={12} sm={6} md={4} key={dish.id}>
-                  <Card 
-                    sx={{ 
+                  <Card
+                    sx={{
                       height: '100%',
                       display: 'flex',
                       flexDirection: 'column'
@@ -476,18 +547,18 @@ const AdminDishes = () => {
                     <CardMedia
                       component="img"
                       height="140"
-                      image={dish.image_path ? `${process.env.REACT_APP_API_URL}${dish.image_path}` : '/static/images/default-dish.jpg'}
+                      image={dish.image_path || '/static/images/default-dish.jpg'}
                       alt={dish.name}
                     />
                     <CardContent sx={{ flexGrow: 1 }}>
                       <Typography variant="h6" component="div" gutterBottom noWrap>
                         {dish.name}
                       </Typography>
-                      
+
                       <Typography variant="body2" color="text.secondary" sx={{ mb: 1, height: '40px', overflow: 'hidden' }}>
                         {dish.description || 'No description available'}
                       </Typography>
-                      
+
                       <Box display="flex" justifyContent="space-between" mt={1}>
                         <Typography variant="subtitle2" color="text.secondary">
                           Category:
@@ -496,17 +567,17 @@ const AdminDishes = () => {
                           {dish.category}
                         </Typography>
                       </Box>
-                      
-                      <Box display="flex" justifyContent="space-between">
+
+                      <Box display="flex" justifyContent="space-between" mt={1}>
                         <Typography variant="subtitle2" color="text.secondary">
                           Price:
                         </Typography>
-                        <Typography variant="subtitle1" fontWeight="medium" color="primary">
-                          ${dish.price.toFixed(2)}
+                        <Typography variant="subtitle1" fontWeight="medium">
+                          ${dish.price}
                         </Typography>
                       </Box>
-                      
-                      <Box display="flex" justifyContent="space-between">
+
+                      <Box display="flex" justifyContent="space-between" mt={1}>
                         <Typography variant="subtitle2" color="text.secondary">
                           Available:
                         </Typography>
@@ -515,19 +586,13 @@ const AdminDishes = () => {
                         </Typography>
                       </Box>
                     </CardContent>
+
                     <CardActions>
-                      <Button 
-                        size="small" 
-                        startIcon={<EditIcon />}
-                        sx={{ mr: 1 }}
-                      >
-                        Edit
-                      </Button>
-                      <Button 
-                        size="small" 
+                      <Button
+                        size="small"
                         color="error"
-                        startIcon={<DeleteIcon />}
                         onClick={() => handleDeleteDialogOpen(dish.id, dish.name)}
+                        startIcon={<DeleteIcon />}
                       >
                         Delete
                       </Button>
@@ -539,7 +604,7 @@ const AdminDishes = () => {
           )}
         </Grid>
       </Grid>
-      
+
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialog.open} onClose={handleDeleteDialogClose}>
         <DialogTitle>Delete Dish</DialogTitle>
@@ -550,27 +615,22 @@ const AdminDishes = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleDeleteDialogClose}>Cancel</Button>
-          <Button 
-            variant="contained" 
-            color="error" 
-            onClick={handleDeleteDish}
-          >
+          <Button onClick={handleDeleteDish} color="error" variant="contained">
             Delete
           </Button>
         </DialogActions>
       </Dialog>
-      
-      {/* Snackbar */}
+
+      {/* Snackbar for notifications */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
-        <Alert 
-          onClose={() => setSnackbar({ ...snackbar, open: false })} 
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
           severity={snackbar.severity}
-          variant="filled"
+          sx={{ width: '100%' }}
         >
           {snackbar.message}
         </Alert>

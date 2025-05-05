@@ -1,175 +1,50 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import moment from 'moment';
 import {
   Container,
   Grid,
-  Card,
-  CardContent,
-  Typography,
-  Button,
-  Tabs,
-  Tab,
-  Box,
-  Divider,
   Paper,
-  List,
-  ListItem,
-  TextField,
-  CardMedia,
+  Typography,
+  Snackbar,
+  Alert,
+  useTheme,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
+  Button,
+  Box,
+  TextField,
   IconButton,
-  Chip,
+  Divider,
   Badge,
-  Fade,
-  CircularProgress,
-  Alert,
-  Snackbar,
-  styled,
-  useTheme,
-  Zoom,
-  Rating
+  List,
+  ListItem,
+  ListItemText,
+  AppBar,
+  Toolbar
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import RemoveIcon from '@mui/icons-material/Remove';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import AddIcon from '@mui/icons-material/Add';
+import HistoryIcon from '@mui/icons-material/History';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import PaymentIcon from '@mui/icons-material/Payment';
-import RestaurantIcon from '@mui/icons-material/Restaurant';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CardMembershipIcon from '@mui/icons-material/CardMembership';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
-import DeliveryDiningIcon from '@mui/icons-material/DeliveryDining';
-import TimerIcon from '@mui/icons-material/Timer';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import PlaceIcon from '@mui/icons-material/Place';
+import FeedbackDialog from '../../components/FeedbackDialog';
 import { customerService } from '../../services/api';
+import OrderHistoryDialog from './components/OrderHistoryDialog';
+import CartDialog from './components/CartDialog';
 
-// Styled components for better visuals
-const CategoryTab = styled(Tab)(({ theme }) => ({
-  minWidth: 'auto',
-  fontSize: '0.95rem',
-  padding: '12px 20px',
-  fontWeight: 600,
-  textTransform: 'none',
-  color: theme.palette.text.primary,
-  borderRadius: '50px',
-  marginRight: '8px',
-  '&.Mui-selected': {
-    backgroundColor: theme.palette.primary.main,
-    color: 'white',
-    fontWeight: 700,
-  },
-  '&:hover': {
-    backgroundColor: 'rgba(0, 0, 0, 0.04)',
-  },
-}));
-
-const StyledTabs = styled(Tabs)(({ theme }) => ({
-  '& .MuiTabs-indicator': {
-    display: 'none',
-  },
-  '& .MuiTabs-flexContainer': {
-    gap: theme.spacing(1),
-  },
-}));
-
-const DishCard = styled(Card)(({ theme }) => ({
-  height: '100%',
-  cursor: 'pointer',
-  transition: 'all 0.3s ease',
-  borderRadius: '16px',
-  overflow: 'hidden',
-  boxShadow: '0 6px 20px rgba(0, 0, 0, 0.06)',
-  '&:hover': {
-    transform: 'translateY(-8px)',
-    boxShadow: '0 15px 30px rgba(0, 0, 0, 0.1)',
-  },
-}));
-
-const MenuImage = styled(CardMedia)(({ theme }) => ({
-  height: 200,
-  position: 'relative',
-  '&::after': {
-    content: '""',
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    width: '100%',
-    height: '40%',
-    background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)',
-  },
-}));
-
-const CartPaper = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(3),
-  borderRadius: '20px',
-  position: 'sticky',
-  top: 20,
-  maxHeight: 'calc(100vh - 40px)',
-  overflow: 'auto',
-  background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
-  boxShadow: '0 15px 35px rgba(0, 0, 0, 0.1)',
-  border: '1px solid rgba(0, 0, 0, 0.05)',
-}));
-
-const PriceBadge = styled(Box)(({ theme }) => ({
-  position: 'absolute',
-  left: theme.spacing(2),
-  bottom: theme.spacing(2),
-  backgroundColor: 'white',
-  color: theme.palette.primary.main,
-  fontWeight: 700,
-  padding: '8px 16px',
-  borderRadius: '30px',
-  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-  zIndex: 2,
-}));
-
-const CategoryBadge = styled(Chip)(({ theme, categorycolor }) => ({
-  position: 'absolute',
-  right: theme.spacing(2),
-  top: theme.spacing(2),
-  backgroundColor: categorycolor || theme.palette.primary.main,
-  color: 'white',
-  fontWeight: 600,
-  zIndex: 2,
-  boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-}));
-
-const SpecialBadge = styled(Box)(({ theme }) => ({
-  position: 'absolute',
-  left: theme.spacing(2),
-  top: theme.spacing(2),
-  backgroundColor: theme.palette.error.main,
-  color: 'white',
-  fontWeight: 700,
-  padding: '4px 12px',
-  fontSize: '0.75rem',
-  textTransform: 'uppercase',
-  borderRadius: '4px',
-  zIndex: 3,
-  boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-  display: 'flex',
-  alignItems: 'center',
-  '& svg': {
-    fontSize: '14px',
-    marginRight: '4px',
-  },
-}));
-
-const AddButton = styled(Button)(({ theme }) => ({
-  borderRadius: '50px',
-  boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
-  padding: '8px 14px',
-  fontWeight: 600,
-  transition: 'all 0.3s ease',
-  '&:hover': {
-    transform: 'scale(1.05)',
-    boxShadow: '0 6px 12px rgba(0,0,0,0.15)',
-  },
-}));
+// Import components
+import HeroBanner from './components/HeroBanner';
+import SpecialOffers from './components/SpecialOffers';
+import TodaySpecials from './components/TodaySpecials';
+import MenuCategories from './components/MenuCategories';
+// import FeaturedDishes from './components/FeaturedDishes';
+import MenuItemsGrid from './components/MenuItemsGrid';
 
 const CustomerMenu = () => {
   const theme = useTheme();
@@ -178,13 +53,14 @@ const CustomerMenu = () => {
   const queryParams = new URLSearchParams(location.search);
   const tableNumber = queryParams.get('table_number');
   const uniqueId = queryParams.get('unique_id');
+  const userId = queryParams.get('user_id');
 
-  // Redirect if table number or unique ID is missing
+  // Redirect if table number, unique ID, or user ID is missing
   useEffect(() => {
-    if (!tableNumber || !uniqueId) {
+    if (!tableNumber || !uniqueId || !userId) {
       navigate('/customer');
     }
-  }, [tableNumber, uniqueId, navigate]);
+  }, [tableNumber, uniqueId, userId, navigate]);
 
   // State
   const [categories, setCategories] = useState(['All']);
@@ -195,16 +71,32 @@ const CustomerMenu = () => {
   const [loading, setLoading] = useState(true);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [currentOrder, setCurrentOrder] = useState(null);
+  const [unpaidOrders, setUnpaidOrders] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedDish, setSelectedDish] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [remarks, setRemarks] = useState('');
-  const [orderConfirmationOpen, setOrderConfirmationOpen] = useState(false);
-  const [orderId, setOrderId] = useState(null);
+  // const [orderConfirmationOpen, setOrderConfirmationOpen] = useState(false);
+  // const [orderId, setOrderId] = useState(null);
+  const [cartDialogOpen, setCartDialogOpen] = useState(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
     severity: 'success'
+  });
+  const [orderHistoryOpen, setOrderHistoryOpen] = useState(false);
+  const [userOrders, setUserOrders] = useState([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
+  const [lastPaidOrderId, setLastPaidOrderId] = useState(null);
+  const [loyaltyDiscount, setLoyaltyDiscount] = useState({
+    discount_percentage: 0,
+    message: ''
+  });
+  const [selectionOfferDiscount, setSelectionOfferDiscount] = useState({
+    discount_amount: 0,
+    message: ''
   });
 
   // Category color mapping
@@ -215,7 +107,13 @@ const CustomerMenu = () => {
     'Beverage': theme.palette.success.main,
   };
 
-  // Load dishes and categories
+  // State for offers and specials
+  const [offers, setOffers] = useState([]);
+  const [loadingOffers, setLoadingOffers] = useState(true);
+  const [specials, setSpecials] = useState([]);
+  const [loadingSpecials, setLoadingSpecials] = useState(true);
+
+  // Load dishes, categories, and offers
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -226,7 +124,17 @@ const CustomerMenu = () => {
 
         // Get menu items
         const dishesData = await customerService.getMenu();
-        
+
+        // Get offer items
+        const offersData = await customerService.getOffers();
+        setOffers(offersData);
+        setLoadingOffers(false);
+
+        // Get special items
+        const specialsData = await customerService.getSpecials();
+        setSpecials(specialsData);
+        setLoadingSpecials(false);
+
         // Add mock ratings and random prep times for visual enhancement
         const enhancedDishes = dishesData.map(dish => ({
           ...dish,
@@ -234,13 +142,14 @@ const CustomerMenu = () => {
           prepTime: Math.floor(Math.random() * 15) + 5, // Random prep time between 5-20 mins
           isPopular: Math.random() > 0.7, // 30% chance of being popular
           isNew: Math.random() > 0.8, // 20% chance of being new
-          isFeatured: Math.random() > 0.85, // 15% chance of being featured
+          isFeatured: dish.is_offer === 1 ? true : Math.random() > 0.85, // Offers are featured, plus 15% chance for others
         }));
-        
+
         setDishes(enhancedDishes);
         setFilteredDishes(enhancedDishes);
         setLoading(false);
       } catch (error) {
+        console.error('Error loading data:', error);
         setSnackbar({
           open: true,
           message: 'Error loading menu data',
@@ -248,14 +157,122 @@ const CustomerMenu = () => {
         });
         setLoading(false);
         setLoadingCategories(false);
+        setLoadingOffers(false);
+        setLoadingSpecials(false);
       }
     };
 
     fetchData();
   }, []);
 
+  // Fetch current order and loyalty discount
+  const fetchCurrentOrder = useCallback(async () => {
+    try {
+      if (userId) {
+        console.log('Fetching orders for user ID:', userId);
+
+        // Get all orders
+        const orders = await customerService.getPersonOrders(userId);
+        console.log('Orders received:', orders);
+
+        // Find all unpaid orders for the current table
+        const tableUnpaidOrders = orders.filter(order =>
+          order.status !== 'paid' &&
+          order.table_number === parseInt(tableNumber)
+        );
+        console.log('Unpaid orders for table', tableNumber, ':', tableUnpaidOrders);
+
+        // Set the most recent unpaid order as the current order (for backward compatibility)
+        const activeOrder = tableUnpaidOrders.length > 0 ? tableUnpaidOrders[0] : null;
+        console.log('Active order:', activeOrder);
+
+        if (activeOrder) {
+          setCurrentOrder(activeOrder);
+        }
+
+        // Set all unpaid orders
+        setUnpaidOrders(tableUnpaidOrders);
+
+        // If no unpaid orders, create a dummy order for testing
+        if (tableUnpaidOrders.length === 0) {
+          console.log('No unpaid orders found, creating a test order');
+
+          try {
+            // Create a test order
+            const testOrderData = {
+              table_number: parseInt(tableNumber),
+              items: [
+                {
+                  dish_id: 1,
+                  quantity: 1,
+                  remarks: 'Test order'
+                }
+              ]
+            };
+
+            const newOrder = await customerService.createOrder(testOrderData, userId);
+            console.log('Test order created:', newOrder);
+
+            // Refresh orders
+            const updatedOrders = await customerService.getPersonOrders(userId);
+            const updatedUnpaidOrders = updatedOrders.filter(order =>
+              order.status !== 'paid' &&
+              order.table_number === parseInt(tableNumber)
+            );
+
+            setUnpaidOrders(updatedUnpaidOrders);
+            if (updatedUnpaidOrders.length > 0) {
+              setCurrentOrder(updatedUnpaidOrders[0]);
+            }
+          } catch (orderError) {
+            console.error('Error creating test order:', orderError);
+          }
+        }
+
+        // Get loyalty discount
+        try {
+          const person = await customerService.getPerson(userId);
+          console.log('Person details:', person);
+
+          if (person && person.visit_count > 0) {
+            const discountData = await customerService.getLoyaltyDiscount(person.visit_count);
+            console.log('Loyalty discount:', discountData);
+            setLoyaltyDiscount(discountData);
+          }
+        } catch (error) {
+          console.error('Error fetching loyalty discount:', error);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching current order:', error);
+    }
+  }, [userId, tableNumber]); // customerService is excluded as it's an imported module
+
+  // Fetch current order and loyalty discount when userId changes
+  useEffect(() => {
+    if (userId) {
+      fetchCurrentOrder();
+    }
+  }, [fetchCurrentOrder, userId]);
+
+  // Mark table as occupied when component loads
+  useEffect(() => {
+    const markTableAsOccupied = async () => {
+      if (tableNumber) {
+        try {
+          await customerService.setTableOccupiedByNumber(parseInt(tableNumber));
+          console.log(`Table ${tableNumber} marked as occupied`);
+        } catch (error) {
+          console.error('Error marking table as occupied:', error);
+        }
+      }
+    };
+
+    markTableAsOccupied();
+  }, [tableNumber]);
+
   // Filter dishes by category
-  const handleCategoryChange = (event, newValue) => {
+  const handleCategoryChange = (_, newValue) => {
     setCurrentCategory(newValue);
     if (newValue === 'All') {
       setFilteredDishes(dishes);
@@ -279,18 +296,28 @@ const CustomerMenu = () => {
 
   // Add item to cart
   const handleAddToCart = () => {
+    // Calculate the actual price (with discount if applicable)
+    const actualPrice = selectedDish.is_offer === 1 ?
+      parseFloat(calculateDiscountedPrice(selectedDish.price, selectedDish.discount)) :
+      selectedDish.price;
+
     const newItem = {
       dish_id: selectedDish.id,
       dish_name: selectedDish.name,
-      price: selectedDish.price,
+      price: actualPrice,
+      original_price: selectedDish.price,
+      discount: selectedDish.discount,
+      is_offer: selectedDish.is_offer,
       quantity: quantity,
       remarks: remarks,
-      image: selectedDish.image_path ? `${process.env.REACT_APP_API_URL}${selectedDish.image_path}` : selectedDish.image_path
+      image: selectedDish.image_path,
+      added_at: new Date().toISOString(), // Add timestamp to track order
+      position: cart.length + 1 // Add position to maintain order
     };
-    
+
     setCart([...cart, newItem]);
     setOpenDialog(false);
-    
+
     setSnackbar({
       open: true,
       message: `${selectedDish.name} added to cart`,
@@ -302,7 +329,38 @@ const CustomerMenu = () => {
   const handleRemoveFromCart = (index) => {
     const newCart = [...cart];
     newCart.splice(index, 1);
-    setCart(newCart);
+
+    // Update positions after removal
+    const updatedCart = newCart.map((item, idx) => ({
+      ...item,
+      position: idx + 1
+    }));
+
+    setCart(updatedCart);
+  };
+
+  // Reorder items in cart
+  const handleReorderCart = (index, direction) => {
+    if (
+      (direction === 'up' && index === 0) ||
+      (direction === 'down' && index === cart.length - 1)
+    ) {
+      return; // Can't move first item up or last item down
+    }
+
+    const newCart = [...cart];
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+
+    // Swap items
+    [newCart[index], newCart[newIndex]] = [newCart[newIndex], newCart[index]];
+
+    // Update positions
+    const updatedCart = newCart.map((item, idx) => ({
+      ...item,
+      position: idx + 1
+    }));
+
+    setCart(updatedCart);
   };
 
   // Calculate total amount
@@ -310,25 +368,49 @@ const CustomerMenu = () => {
     return cart.reduce((total, item) => total + (item.price * item.quantity), 0).toFixed(2);
   };
 
+  // Calculate discounted price
+  const calculateDiscountedPrice = (price, discount) => {
+    return (price - (price * discount / 100)).toFixed(2);
+  };
+
   // Place order
   const handlePlaceOrder = async () => {
     try {
+      // Get username and password from URL parameters if available
+      const urlParams = new URLSearchParams(window.location.search);
+      const username = urlParams.get('username');
+      const password = urlParams.get('password');
+
+      // Sort cart items by position to maintain the order they were added
+      const sortedCart = [...cart].sort((a, b) => a.position - b.position);
+
       const orderData = {
         table_number: parseInt(tableNumber),
         unique_id: uniqueId,
-        items: cart.map(item => ({
+        // Include username and password if available
+        ...(username && { username }),
+        ...(password && { password }),
+        items: sortedCart.map(item => ({
           dish_id: item.dish_id,
           quantity: item.quantity,
           remarks: item.remarks
         }))
       };
 
-      const response = await customerService.createOrder(orderData);
+      // Pass the person_id as a query parameter
+      const response = await customerService.createOrder(orderData, userId);
       setCurrentOrder(response);
-      setOrderId(response.id);
-      setOrderConfirmationOpen(true);
+
+      // Show order confirmation
+      setSnackbar({
+        open: true,
+        message: `Order placed successfully! Order #${response.id}`,
+        severity: 'success'
+      });
+
       setCart([]);
     } catch (error) {
+      console.error('Error placing order:', error);
       setSnackbar({
         open: true,
         message: 'Error placing order',
@@ -339,17 +421,177 @@ const CustomerMenu = () => {
 
   // Request payment
   const handleRequestPayment = async () => {
+    console.log('Requesting payment, unpaid orders:', unpaidOrders);
+
+    // Refresh orders before showing payment dialog
     try {
-      await customerService.requestPayment(currentOrder.id);
+      if (userId) {
+        // Refresh orders
+        const orders = await customerService.getPersonOrders(userId);
+        console.log('Refreshed orders:', orders);
+
+        // Find all unpaid orders for the current table
+        const tableUnpaidOrders = orders.filter(order =>
+          order.status !== 'paid' &&
+          order.table_number === parseInt(tableNumber)
+        );
+        console.log('Refreshed unpaid orders:', tableUnpaidOrders);
+
+        // Update unpaid orders state
+        setUnpaidOrders(tableUnpaidOrders);
+
+        // If no unpaid orders, show a message and return
+        if (tableUnpaidOrders.length === 0) {
+          setSnackbar({
+            open: true,
+            message: 'No unpaid orders found. Please place an order first.',
+            severity: 'warning'
+          });
+          return;
+        }
+
+        // Refresh loyalty discount
+        try {
+          const person = await customerService.getPerson(userId);
+          console.log('Person details for loyalty discount:', person);
+
+          if (person && person.visit_count > 0) {
+            // Apply a default loyalty discount based on visit count
+            let discountData = {
+              discount_percentage: 0,
+              message: 'No loyalty discount available',
+              visit_count: person.visit_count
+            };
+
+            // Apply discount based on visit count (exact matches only)
+            if (person.visit_count === 10) {
+              discountData = {
+                discount_percentage: 15,
+                message: 'Loyalty Discount: 15% off for exactly 10 visits',
+                visit_count: person.visit_count
+              };
+            } else if (person.visit_count === 5) {
+              discountData = {
+                discount_percentage: 10,
+                message: 'Loyalty Discount: 10% off for exactly 5 visits',
+                visit_count: person.visit_count
+              };
+            } else if (person.visit_count === 3) {
+              discountData = {
+                discount_percentage: 5,
+                message: 'Loyalty Discount: 5% off for exactly 3 visits',
+                visit_count: person.visit_count
+              };
+            }
+
+            console.log('Applied loyalty discount:', discountData);
+            setLoyaltyDiscount(discountData);
+          }
+        } catch (error) {
+          console.error('Error setting loyalty discount:', error);
+        }
+
+        // Get selection offer discount based on total of all unpaid orders
+        try {
+          // Calculate total across all unpaid orders
+          const totalOrderAmount = tableUnpaidOrders.reduce((total, order) => {
+            return total + (order.items ? order.items.reduce((sum, item) => sum + (item.dish?.price || 0) * item.quantity, 0) : 0);
+          }, 0);
+
+          console.log('Total order amount for discount calculation:', totalOrderAmount);
+
+          // Get selection offer discount from backend API
+          try {
+            const offerData = await customerService.getSelectionOfferDiscount(totalOrderAmount);
+            console.log('Selection offer discount from API:', offerData);
+            setSelectionOfferDiscount(offerData);
+          } catch (apiError) {
+            console.error('Error fetching selection offer discount from API:', apiError);
+
+            // Fallback to local calculation if API fails
+            let offerData = { discount_amount: 0, message: 'No special offer available' };
+
+            // If total amount is over $100, apply a $15 discount
+            if (totalOrderAmount >= 100) {
+              offerData = {
+                discount_amount: 15,
+                message: 'Special Offer: $15 off on orders above $100'
+              };
+            }
+            // If total amount is over $50, apply a $5 discount
+            else if (totalOrderAmount >= 50) {
+              offerData = {
+                discount_amount: 5,
+                message: 'Special Offer: $5 off on orders above $50'
+              };
+            }
+
+            console.log('Selection offer discount (fallback):', offerData);
+            setSelectionOfferDiscount(offerData);
+          }
+        } catch (error) {
+          console.error('Error setting selection offer discount:', error);
+        }
+
+        // Open payment dialog
+        setPaymentDialogOpen(true);
+      }
+    } catch (error) {
+      console.error('Error refreshing orders for payment:', error);
       setSnackbar({
         open: true,
-        message: 'Payment request sent! Please proceed to the counter to complete your payment.',
+        message: 'Error loading payment details. Please try again.',
+        severity: 'error'
+      });
+    }
+  };
+
+  // Close payment dialog
+  const handleClosePaymentDialog = () => {
+    setPaymentDialogOpen(false);
+  };
+
+  // Complete payment
+  const handleCompletePayment = async () => {
+    try {
+      // Store the first order ID for feedback before marking as paid
+      const firstOrderId = unpaidOrders.length > 0 ? unpaidOrders[0].id : null;
+
+      // Mark all unpaid orders as paid
+      const paymentPromises = unpaidOrders.map(order =>
+        customerService.requestPayment(order.id)
+      );
+
+      await Promise.all(paymentPromises);
+
+      // Store the last paid order ID for feedback
+      setLastPaidOrderId(firstOrderId);
+
+      setPaymentDialogOpen(false);
+      setSnackbar({
+        open: true,
+        message: 'Payment completed successfully! The bill will arrive at your table soon.',
         severity: 'success'
       });
+
+      // Refresh order history after payment
+      if (userId) {
+        const orders = await customerService.getPersonOrders(userId);
+        setUserOrders(orders);
+
+        // Clear unpaid orders
+        setUnpaidOrders([]);
+        setCurrentOrder(null);
+      }
+
+      // Show feedback dialog after successful payment
+      setTimeout(() => {
+        setFeedbackDialogOpen(true);
+      }, 1000);
     } catch (error) {
       setSnackbar({
         open: true,
-        message: 'Error requesting payment',
+        message: 'Error processing payment',
         severity: 'error'
       });
     }
@@ -373,655 +615,297 @@ const CustomerMenu = () => {
     });
   };
 
-  // Close order confirmation dialog
-  const handleCloseConfirmation = () => {
-    setOrderConfirmationOpen(false);
+  // Close order confirmation dialog (kept for future use)
+  // const handleCloseConfirmation = () => {
+  //   setOrderConfirmationOpen(false);
+  // };
+
+  // Open cart dialog
+  const handleOpenCartDialog = () => {
+    setCartDialogOpen(true);
+  };
+
+  // Close cart dialog
+  const handleCloseCartDialog = () => {
+    setCartDialogOpen(false);
+  };
+
+
+
+  // Open order history dialog
+  const handleOpenOrderHistory = async () => {
+    if (!userId) {
+      setSnackbar({
+        open: true,
+        message: 'User ID not found. Please log in again.',
+        severity: 'error'
+      });
+      return;
+    }
+
+    setLoadingOrders(true);
+    setOrderHistoryOpen(true);
+
+    try {
+      const orders = await customerService.getPersonOrders(userId);
+      setUserOrders(orders);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      setSnackbar({
+        open: true,
+        message: 'Error loading order history',
+        severity: 'error'
+      });
+    } finally {
+      setLoadingOrders(false);
+    }
+  };
+
+  // Close order history dialog
+  const handleCloseOrderHistory = () => {
+    setOrderHistoryOpen(false);
+  };
+
+  // Format date
+  const formatDate = (dateString) => {
+    return moment(dateString).format('MMM D, YYYY h:mm A');
+  };
+
+  // Get order status color
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'pending':
+        return 'warning';
+      case 'completed':
+        return 'success';
+      case 'payment_requested':
+        return 'info';
+      case 'paid':
+        return 'success';
+      case 'cancelled':
+        return 'error';
+      default:
+        return 'default';
+    }
+  };
+
+  // Get order status label
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case 'pending':
+        return 'Preparing';
+      case 'completed':
+        return 'Ready';
+      case 'payment_requested':
+        return 'Payment Requested';
+      case 'paid':
+        return 'Paid';
+      case 'cancelled':
+        return 'Cancelled';
+      default:
+        return status;
+    }
   };
 
   return (
-    <Container maxWidth="xl">
+    <Container maxWidth="xl" sx={{ px: { xs: 1, sm: 2 } }}>
       {/* Hero Banner */}
-      <Box
-        sx={{
-          position: 'relative',
-          height: '240px',
-          borderRadius: '24px',
-          overflow: 'hidden',
-          mb: 4,
-          boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
-          background: `linear-gradient(to right, rgba(0,0,0,0.7), rgba(0,0,0,0.3)), url('https://images.unsplash.com/photo-1514933651103-005eec06c04b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1374&q=80')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
-      >
-        <Box
-          sx={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            width: '100%',
-            p: 4,
-            color: 'white',
-          }}
-        >
-          <Fade in={true} timeout={1000}>
-            <Box>
-              <Typography variant="h3" component="h1" fontWeight="bold" gutterBottom>
-                Exclusive Dining Experience
-              </Typography>
-              <Box display="flex" alignItems="center" gap={2} mt={1}>
-                <Box display="flex" alignItems="center">
-                  <PlaceIcon sx={{ mr: 0.5, fontSize: '1rem' }} />
-                  <Typography variant="body2">Table #{tableNumber}</Typography>
-                </Box>
-                <Box display="flex" alignItems="center">
-                  <Rating value={4.8} readOnly precision={0.5} size="small" sx={{ mr: 0.5 }} />
-                  <Typography variant="body2">4.8 (120+ reviews)</Typography>
-                </Box>
-                <Chip
-                  label={uniqueId}
-                  size="small"
-                  sx={{
-                    backgroundColor: 'rgba(255,255,255,0.2)',
-                    color: 'white',
-                    fontWeight: 'bold',
-                    backdropFilter: 'blur(4px)',
-                  }}
-                />
-              </Box>
-            </Box>
-          </Fade>
-        </Box>
-      </Box>
+      <HeroBanner tableNumber={tableNumber} uniqueId={uniqueId} />
+
+      {/* Special Offers Section */}
+      <SpecialOffers
+        offers={offers}
+        loading={loadingOffers}
+        handleOpenDialog={handleOpenDialog}
+        calculateDiscountedPrice={calculateDiscountedPrice}
+      />
+
+      {/* Today's Special Section */}
+      <TodaySpecials
+        specials={specials}
+        loading={loadingSpecials}
+        handleOpenDialog={handleOpenDialog}
+      />
 
       <Grid container spacing={4}>
-        {/* Left Column - Menu */}
-        <Grid item xs={12} md={8}>
+        {/* Menu */}
+        <Grid item xs={12}>
           <Paper
-            elevation={2}
+            elevation={3}
             sx={{
-              p: 3,
-              mb: 4,
-              borderRadius: '16px',
-              background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+              p: 2,
+              mb: 6,
+              borderRadius: '6px',
+              backgroundColor: '#121212',
+              color: '#FFFFFF',
+              border: '1px solid rgba(255, 165, 0, 0.2)',
+              position: 'relative',
+              '&::after': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '4px',
+                backgroundColor: '#FFA500',
+              }
             }}
           >
-            <Typography variant="h5" component="h2" fontWeight="bold" gutterBottom 
-              sx={{ 
-                display: 'flex', 
+            <Typography variant="h4" component="h2" fontWeight="bold" gutterBottom
+              sx={{
+                display: 'flex',
                 alignItems: 'center',
+                color: '#FFFFFF',
+                mb: 3,
                 '&:after': {
                   content: '""',
                   display: 'block',
                   height: '2px',
                   flexGrow: 1,
-                  backgroundColor: 'rgba(0,0,0,0.06)',
+                  backgroundColor: 'rgba(255, 165, 0, 0.3)',
                   ml: 2
                 }
               }}
             >
-              Our Menu
+              Our <Box component="span" sx={{ color: '#FFA500', ml: 1 }}>Menu</Box>
             </Typography>
 
             {/* Category Tabs */}
-            {loadingCategories ? (
-              <Box display="flex" justifyContent="center" my={3}>
-                <CircularProgress size={30} />
-              </Box>
-            ) : (
-              <StyledTabs
-                value={currentCategory}
-                onChange={handleCategoryChange}
-                variant="scrollable"
-                scrollButtons="auto"
-                sx={{ mb: 4, mt: 2 }}
-              >
-                {categories.map((category) => (
-                  <CategoryTab key={category} label={category} value={category} />
-                ))}
-              </StyledTabs>
-            )}
+            <MenuCategories
+              categories={categories}
+              currentCategory={currentCategory}
+              handleCategoryChange={handleCategoryChange}
+              loading={loadingCategories}
+            />
 
-            {/* Featured Section */}
-            {currentCategory === 'All' && (
-              <Box mb={6}>
-                <Box 
-                  sx={{ 
-                    display: 'flex',
-                    alignItems: 'center',
-                    mb: 3,
-                    '&:after': {
-                      content: '""',
-                      display: 'block',
-                      height: '1px',
-                      flexGrow: 1,
-                      backgroundColor: 'rgba(0,0,0,0.06)',
-                      ml: 2
-                    }
-                  }}
-                >
-                  <Typography variant="h6" color="primary" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center' }}>
-                    <FavoriteIcon sx={{ mr: 1, color: theme.palette.error.main }} /> 
-                    Chef's Recommendations
-                  </Typography>
-                </Box>
-                
-                <Grid container spacing={3}>
-                  {filteredDishes
-                    .filter(dish => dish.isFeatured)
-                    .slice(0, 3)
-                    .map((dish) => (
-                      <Grid item xs={12} key={`featured-${dish.id}`}>
-                        <Fade in={true} timeout={500}>
-                          <Card 
-                            sx={{ 
-                              display: 'flex',
-                              borderRadius: '16px',
-                              overflow: 'hidden',
-                              boxShadow: '0 8px 20px rgba(0,0,0,0.08)',
-                              cursor: 'pointer',
-                              '&:hover': {
-                                boxShadow: '0 12px 24px rgba(0,0,0,0.12)',
-                              }
-                            }}
-                            onClick={() => handleOpenDialog(dish)}
-                          >
-                            <Box sx={{ width: '35%', position: 'relative' }}>
-                              <CardMedia
-                                component="img"
-                                sx={{ height: '100%', objectFit: 'cover' }}
-                                image={dish.image_path ? `${process.env.REACT_APP_API_URL}${dish.image_path}` : 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80'}
-                                alt={dish.name}
-                              />
-                              <SpecialBadge>
-                                <LocalOfferIcon /> Featured
-                              </SpecialBadge>
-                            </Box>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', width: '65%' }}>
-                              <CardContent sx={{ flex: '1 0 auto', p: 3 }}>
-                                <Box display="flex" justifyContent="space-between" alignItems="flex-start">
-                                  <Box>
-                                    <Typography variant="h6" fontWeight="bold" gutterBottom>
-                                      {dish.name}
-                                    </Typography>
-                                    <Typography variant="body2" color="text.secondary" paragraph>
-                                      {dish.description || 'A delectable dish crafted with the finest ingredients.'}
-                                    </Typography>
-                                  </Box>
-                                  <Typography variant="h6" fontWeight="bold" color="primary.dark">
-                                    ${dish.price.toFixed(2)}
-                                  </Typography>
-                                </Box>
-                                
-                                <Box display="flex" justifyContent="space-between" alignItems="center" mt={2}>
-                                  <Box display="flex" alignItems="center" gap={2}>
-                                    <Box display="flex" alignItems="center">
-                                      <Rating value={parseFloat(dish.rating)} readOnly precision={0.5} size="small" />
-                                      <Typography variant="body2" sx={{ ml: 0.5 }}>
-                                        {dish.rating}
-                                      </Typography>
-                                    </Box>
-                                    <Chip 
-                                      icon={<TimerIcon fontSize="small" />} 
-                                      label={`${dish.prepTime} min`}
-                                      size="small"
-                                      variant="outlined"
-                                    />
-                                  </Box>
-                                  <AddButton
-                                    variant="contained"
-                                    size="small"
-                                    startIcon={<AddIcon />}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleOpenDialog(dish);
-                                    }}
-                                  >
-                                    Add
-                                  </AddButton>
-                                </Box>
-                              </CardContent>
-                            </Box>
-                          </Card>
-                        </Fade>
-                      </Grid>
-                    ))}
-                </Grid>
-              </Box>
-            )}
+
 
             {/* Regular Menu Items */}
-            <Box>
-              <Box 
-                sx={{ 
-                  display: 'flex',
-                  alignItems: 'center',
-                  mb: 3,
-                  '&:after': {
-                    content: '""',
-                    display: 'block',
-                    height: '1px',
-                    flexGrow: 1,
-                    backgroundColor: 'rgba(0,0,0,0.06)',
-                    ml: 2
-                  }
-                }}
-              >
-                <Typography variant="h6" color="text.primary" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center' }}>
-                  <RestaurantIcon sx={{ mr: 1, color: theme.palette.primary.main }} /> 
-                  {currentCategory === 'All' ? 'All Items' : currentCategory}
-                </Typography>
-              </Box>
-
-              {/* Menu Items Grid */}
-              {loading ? (
-                <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-                  <CircularProgress />
-                </Box>
-              ) : (
-                <Grid container spacing={3}>
-                  {filteredDishes
-                    .filter(dish => currentCategory === 'All' ? !dish.isFeatured : true)
-                    .map((dish) => (
-                      <Grid item xs={12} sm={6} md={4} key={dish.id}>
-                        <Zoom in={true} style={{ transitionDelay: '100ms' }}>
-                          <DishCard onClick={() => handleOpenDialog(dish)}>
-                            <Box sx={{ position: 'relative' }}>
-                              <MenuImage
-                                image={dish.image_path ? `${process.env.REACT_APP_API_URL}${dish.image_path}` : 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80'}
-                                alt={dish.name}
-                              />
-                              <PriceBadge>${dish.price.toFixed(2)}</PriceBadge>
-                              
-                              {dish.isPopular && (
-                                <SpecialBadge>
-                                  <LocalOfferIcon /> Popular
-                                </SpecialBadge>
-                              )}
-                              
-                              {dish.isNew && !dish.isPopular && (
-                                <SpecialBadge sx={{ backgroundColor: theme.palette.secondary.main }}>
-                                  <LocalOfferIcon /> New
-                                </SpecialBadge>
-                              )}
-                              
-                              {currentCategory === 'All' && (
-                                <CategoryBadge 
-                                  label={dish.category} 
-                                  size="small"
-                                  categorycolor={categoryColors[dish.category]}
-                                />
-                              )}
-                            </Box>
-                            <CardContent sx={{ position: 'relative' }}>
-                              <Typography gutterBottom variant="h6" component="div" fontWeight="bold">
-                                {dish.name}
-                              </Typography>
-                              
-                              {dish.description && (
-                                <Typography 
-                                  variant="body2" 
-                                  color="text.secondary" 
-                                  sx={{ mb: 2, height: '40px', overflow: 'hidden' }}
-                                >
-                                  {dish.description.length > 80 
-                                    ? dish.description.substring(0, 80) + '...' 
-                                    : dish.description}
-                                </Typography>
-                              )}
-                              
-                              <Divider sx={{ my: 1.5 }} />
-                              
-                              <Box display="flex" justifyContent="space-between" alignItems="center">
-                                <Box display="flex" alignItems="center">
-                                  <Rating value={parseFloat(dish.rating)} readOnly precision={0.5} size="small" />
-                                  <Typography variant="body2" sx={{ ml: 0.5 }}>
-                                    {dish.rating}
-                                  </Typography>
-                                </Box>
-                                <Chip 
-                                  icon={<TimerIcon fontSize="small" />} 
-                                  label={`${dish.prepTime} min`}
-                                  size="small"
-                                  variant="outlined"
-                                />
-                              </Box>
-                              
-                              <Box display="flex" justifyContent="flex-end" mt={2}>
-                                <AddButton
-                                  variant="contained"
-                                  size="small"
-                                  startIcon={<AddIcon />}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleOpenDialog(dish);
-                                  }}
-                                >
-                                  Add
-                                </AddButton>
-                              </Box>
-                            </CardContent>
-                          </DishCard>
-                        </Zoom>
-                      </Grid>
-                    ))}
-                  
-                  {filteredDishes.length === 0 && !loading && (
-                    <Grid item xs={12}>
-                      <Box textAlign="center" py={8} sx={{ backgroundColor: 'rgba(0, 0, 0, 0.02)', borderRadius: '16px' }}>
-                        <RestaurantIcon sx={{ fontSize: 80, color: 'text.secondary', mb: 2, opacity: 0.5 }} />
-                        <Typography variant="h6" color="text.secondary" gutterBottom>
-                          No dishes available in this category
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ maxWidth: '400px', mx: 'auto' }}>
-                          Please check back later or try another category from our menu
-                        </Typography>
-                      </Box>
-                    </Grid>
-                  )}
-                </Grid>
-              )}
-            </Box>
+            <MenuItemsGrid
+              dishes={dishes}
+              filteredDishes={filteredDishes}
+              currentCategory={currentCategory}
+              loading={loading}
+              handleOpenDialog={handleOpenDialog}
+              categoryColors={categoryColors}
+              theme={theme}
+            />
           </Paper>
-        </Grid>
-
-        {/* Right Column - Cart */}
-        <Grid item xs={12} md={4}>
-          <CartPaper>
-            <Box display="flex" alignItems="center" mb={3}>
-              <Badge 
-                badgeContent={cart.length} 
-                color="primary" 
-                sx={{ 
-                  mr: 2,
-                  '& .MuiBadge-badge': { 
-                    fontWeight: 'bold',
-                    fontSize: '0.9rem',
-                    minWidth: '22px',
-                    height: '22px',
-                  } 
-                }}
-              >
-                <ShoppingCartIcon color="primary" fontSize="large" />
-              </Badge>
-              <Typography variant="h5" component="h2" fontWeight="bold">
-                Your Order
-              </Typography>
-            </Box>
-            
-            <Divider sx={{ mb: 3 }} />
-
-            {/* Cart Items */}
-            {cart.length === 0 ? (
-              <Box textAlign="center" py={8} mb={3}>
-                <Box
-                  component="img"
-                  src="https://img.freepik.com/free-vector/empty-shopping-cart-illustration_114065-634.jpg?w=826&t=st=1699123456~exp=1699124056~hmac=86a5d1f14da1d3c532839d11bba8c9ce44c5b23f50953a44d576edb7b8a29381"
-                  alt="Empty cart"
-                  sx={{ width: '70%', maxWidth: '200px', mb: 3, opacity: 0.8 }}
-                />
-                <Typography color="text.secondary" variant="h6" gutterBottom>
-                  Your cart is empty
-                </Typography>
-                <Typography color="text.secondary" variant="body2">
-                  Add some delicious dishes from our menu
-                </Typography>
-              </Box>
-            ) : (
-              <List disablePadding>
-                {cart.map((item, index) => (
-                  <ListItem
-                    key={index}
-                    sx={{
-                      py: 2,
-                      px: 0,
-                      borderBottom: '1px solid',
-                      borderColor: 'divider'
-                    }}
-                    secondaryAction={
-                      <IconButton 
-                        edge="end" 
-                        size="small"
-                        color="error"
-                        onClick={() => handleRemoveFromCart(index)}
-                        sx={{ 
-                          backgroundColor: 'rgba(255, 90, 95, 0.1)',
-                          '&:hover': {
-                            backgroundColor: 'rgba(255, 90, 95, 0.2)',
-                          }
-                        }}
-                      >
-                        <DeleteOutlineIcon />
-                      </IconButton>
-                    }
-                  >
-                    <Box sx={{ display: 'flex', width: '100%' }}>
-                      <Box 
-                        sx={{ 
-                          width: 60, 
-                          height: 60, 
-                          borderRadius: '12px', 
-                          overflow: 'hidden',
-                          mr: 2,
-                          flexShrink: 0,
-                        }}
-                      >
-                        <img 
-                          src={item.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80'} 
-                          alt={item.dish_name}
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        />
-                      </Box>
-                      <Box sx={{ flexGrow: 1, pr: 2 }}>
-                        <Box display="flex" alignItems="center">
-                          <Typography variant="body1" fontWeight="bold">
-                            {item.dish_name}
-                          </Typography>
-                          <Chip 
-                            label={`x${item.quantity}`} 
-                            size="small" 
-                            color="primary" 
-                            sx={{ ml: 1, height: '20px', fontSize: '0.7rem' }}
-                          />
-                        </Box>
-                        {item.remarks && (
-                          <Typography variant="caption" display="block" color="text.secondary" sx={{ fontStyle: 'italic', mt: 0.5 }}>
-                            Note: {item.remarks}
-                          </Typography>
-                        )}
-                        <Typography variant="body2" color="primary.main" fontWeight="medium" sx={{ mt: 0.5 }}>
-                          ${(item.price * item.quantity).toFixed(2)}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </ListItem>
-                ))}
-              </List>
-            )}
-
-            {/* Order Summary */}
-            {cart.length > 0 && (
-              <Box mt={3} pt={2} pb={1} px={2} bgcolor="rgba(0,0,0,0.02)" borderRadius={2}>
-                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                  Order Summary
-                </Typography>
-                <Box display="flex" justifyContent="space-between" mb={1}>
-                  <Typography variant="body2">Items Subtotal:</Typography>
-                  <Typography variant="body2">${calculateTotal()}</Typography>
-                </Box>
-                <Box display="flex" justifyContent="space-between" mb={1}>
-                  <Typography variant="body2">Service Charge:</Typography>
-                  <Typography variant="body2">$0.00</Typography>
-                </Box>
-                <Divider sx={{ my: 1 }} />
-                <Box display="flex" justifyContent="space-between">
-                  <Typography variant="subtitle1" fontWeight="bold">Total:</Typography>
-                  <Typography variant="h6" color="primary.main" fontWeight="bold">
-                    ${calculateTotal()}
-                  </Typography>
-                </Box>
-              </Box>
-            )}
-
-            {/* Action Buttons */}
-            <Box mt={4}>
-              {currentOrder ? (
-                <Button
-                  variant="contained"
-                  color="success"
-                  fullWidth
-                  size="large"
-                  startIcon={<PaymentIcon />}
-                  onClick={handleRequestPayment}
-                  sx={{ 
-                    py: 1.8,
-                    fontSize: '1.1rem',
-                    fontWeight: 'bold',
-                    background: 'linear-gradient(145deg, #4DAA57 0%, #2E8B57 100%)',
-                    boxShadow: '0 8px 16px rgba(77, 170, 87, 0.25)',
-                    borderRadius: '12px',
-                  }}
-                >
-                  Proceed to Payment
-                </Button>
-              ) : (
-                <Button
-                  variant="contained"
-                  color="primary"
-                  fullWidth
-                  size="large"
-                  disabled={cart.length === 0}
-                  onClick={handlePlaceOrder}
-                  sx={{ 
-                    py: 1.8,
-                    fontSize: '1.1rem',
-                    fontWeight: 'bold',
-                    background: 'linear-gradient(145deg, #FF5A5F 0%, #FF385C 100%)',
-                    boxShadow: '0 8px 16px rgba(255, 90, 95, 0.25)',
-                    borderRadius: '12px',
-                    '&:hover': {
-                      boxShadow: '0 12px 24px rgba(255, 90, 95, 0.3)',
-                    },
-                  }}
-                >
-                  Place Order
-                </Button>
-              )}
-              
-              {/* Delivery Time Indicator */}
-              {cart.length > 0 && !currentOrder && (
-                <Box display="flex" alignItems="center" justifyContent="center" mt={2}>
-                  <DeliveryDiningIcon color="action" sx={{ mr: 1, fontSize: '1.2rem' }} />
-                  <Typography variant="body2" color="text.secondary">
-                    Estimated delivery: {Math.floor(Math.random() * 15) + 15}-{Math.floor(Math.random() * 15) + 30} mins
-                  </Typography>
-                </Box>
-              )}
-            </Box>
-            
-            {/* Restaurant Policy */}
-            <Box mt={4} pt={3} borderTop="1px dashed rgba(0,0,0,0.1)">
-              <Typography variant="subtitle2" color="text.secondary" gutterBottom fontWeight="medium">
-                Restaurant Policy
-              </Typography>
-              <Typography variant="caption" color="text.secondary" component="p" paragraph>
-                • All prices are inclusive of taxes
-              </Typography>
-              <Typography variant="caption" color="text.secondary" component="p" paragraph>
-                • Once placed, orders cannot be cancelled
-              </Typography>
-              <Typography variant="caption" color="text.secondary" component="p">
-                • For assistance, please contact our staff
-              </Typography>
-            </Box>
-          </CartPaper>
         </Grid>
       </Grid>
 
       {/* Add to Cart Dialog */}
-      <Dialog 
-        open={openDialog} 
-        onClose={handleCloseDialog} 
-        maxWidth="xs" 
+      <Dialog
+        open={openDialog}
+        onClose={handleCloseDialog}
+        maxWidth="xs"
         fullWidth
         PaperProps={{
-          sx: { borderRadius: '16px' }
+          sx: {
+            borderRadius: '6px',
+            backgroundColor: '#121212',
+            color: 'white',
+            border: '1px solid rgba(255, 165, 0, 0.3)',
+            boxShadow: '0 15px 40px rgba(0, 0, 0, 0.4)',
+            position: 'relative',
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '4px',
+              backgroundColor: '#FFA500',
+            }
+          }
         }}
       >
-        <DialogTitle sx={{ pb: 1 }}>
-          <Typography variant="h6" fontWeight="bold">{selectedDish?.name}</Typography>
+        <DialogTitle sx={{ pb: 1, borderBottom: '1px solid rgba(255, 165, 0, 0.2)' }}>
+          <Typography variant="h6" fontWeight="bold" color="white">{selectedDish?.name}</Typography>
         </DialogTitle>
-        <DialogContent dividers>
+        <DialogContent dividers sx={{ borderColor: 'rgba(255, 165, 0, 0.2)' }}>
           {selectedDish && (
             <>
-              <Box 
-                sx={{ 
-                  height: 200, 
-                  borderRadius: '12px', 
-                  overflow: 'hidden', 
+              <Box
+                sx={{
+                  height: 200,
+                  borderRadius: '12px',
+                  overflow: 'hidden',
                   mb: 3,
                   position: 'relative'
                 }}
               >
-                <img 
-                  src={selectedDish.image_path ? `${process.env.REACT_APP_API_URL}${selectedDish.image_path}` : 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80'}
+                <img
+                  src={selectedDish.image_path || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80'}
                   alt={selectedDish.name}
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
-                <Box 
-                  sx={{ 
-                    position: 'absolute', 
-                    top: 0, 
-                    left: 0, 
-                    width: '100%', 
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
                     height: '100%',
                     background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 50%)',
                   }}
                 />
-                <Box 
-                  sx={{ 
-                    position: 'absolute', 
-                    bottom: 0, 
-                    left: 0, 
-                    width: '100%', 
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    width: '100%',
                     p: 2,
                     color: 'white'
                   }}
                 >
-                  <Typography variant="h6" fontWeight="bold">${selectedDish.price.toFixed(2)}</Typography>
+                  {selectedDish.is_offer === 1 ? (
+                    <Box>
+                      <Typography variant="body2" color="text.secondary" sx={{ textDecoration: 'line-through' }}>
+                        ${selectedDish.price.toFixed(2)}
+                      </Typography>
+                      <Typography variant="h6" fontWeight="bold" color="error.main">
+                        ${calculateDiscountedPrice(selectedDish.price, selectedDish.discount)}
+                      </Typography>
+                    </Box>
+                  ) : (
+                    <Typography variant="h6" fontWeight="bold">${selectedDish.price.toFixed(2)}</Typography>
+                  )}
                 </Box>
               </Box>
-              
-              <Typography variant="subtitle1" gutterBottom fontWeight="bold">
+
+              <Typography variant="subtitle1" gutterBottom fontWeight="bold" color="white">
                 Description
               </Typography>
-              <Typography variant="body2" color="text.secondary" paragraph>
+              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }} paragraph>
                 {selectedDish.description || 'A delicious dish prepared with quality ingredients.'}
               </Typography>
-              
-              <Divider sx={{ my: 2 }} />
-              
-              <Typography variant="subtitle1" gutterBottom fontWeight="bold">
+
+              <Divider sx={{ my: 2, backgroundColor: 'rgba(255, 165, 0, 0.2)' }} />
+
+              <Typography variant="subtitle1" gutterBottom fontWeight="bold" color="white">
                 Quantity
               </Typography>
-              <Box 
-                display="flex" 
-                alignItems="center" 
-                sx={{ 
-                  border: '1px solid', 
-                  borderColor: 'divider', 
-                  borderRadius: '50px',
-                  width: 'fit-content', 
-                  px: 1
+              <Box
+                display="flex"
+                alignItems="center"
+                sx={{
+                  border: '1px solid',
+                  borderColor: 'rgba(255, 165, 0, 0.3)',
+                  borderRadius: '4px',
+                  width: 'fit-content',
+                  px: 1,
+                  backgroundColor: 'rgba(0, 0, 0, 0.3)'
                 }}
               >
-                <IconButton 
-                  size="small" 
+                <IconButton
+                  size="small"
                   onClick={decrementQuantity}
-                  sx={{ 
-                    color: quantity === 1 ? 'text.disabled' : 'primary.main',
+                  sx={{
+                    color: quantity === 1 ? 'rgba(255,255,255,0.3)' : '#FFA500',
                     '&:hover': {
-                      backgroundColor: quantity === 1 ? 'transparent' : 'rgba(0,0,0,0.04)'
+                      backgroundColor: quantity === 1 ? 'transparent' : 'rgba(255,165,0,0.1)'
                     }
                   }}
                   disabled={quantity === 1}
@@ -1037,20 +921,20 @@ const CustomerMenu = () => {
                       setQuantity(val);
                     }
                   }}
-                  InputProps={{ 
-                    disableUnderline: true, 
-                    inputProps: { 
-                      style: { textAlign: 'center', width: '30px', fontWeight: 'bold' } 
-                    } 
+                  InputProps={{
+                    disableUnderline: true,
+                    inputProps: {
+                      style: { textAlign: 'center', width: '30px', fontWeight: 'bold', color: 'white' }
+                    }
                   }}
                 />
-                <IconButton size="small" onClick={incrementQuantity} color="primary">
+                <IconButton size="small" onClick={incrementQuantity} sx={{ color: '#FFA500' }}>
                   <AddIcon />
                 </IconButton>
               </Box>
 
               <Box mt={3}>
-                <Typography variant="subtitle1" gutterBottom fontWeight="bold">
+                <Typography variant="subtitle1" gutterBottom fontWeight="bold" color="white">
                   Special Instructions (Optional)
                 </Typography>
                 <TextField
@@ -1063,123 +947,469 @@ const CustomerMenu = () => {
                   onChange={(e) => setRemarks(e.target.value)}
                   sx={{
                     '& .MuiOutlinedInput-root': {
-                      borderRadius: '12px',
-                    }
+                      borderRadius: '4px',
+                      backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                      borderColor: 'rgba(255, 165, 0, 0.3)',
+                      color: 'white',
+                      '&:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'rgba(255, 165, 0, 0.5)',
+                      },
+                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                        borderColor: '#FFA500',
+                      },
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'rgba(255, 165, 0, 0.3)',
+                      },
+                    },
+                    '& .MuiInputBase-input': {
+                      color: 'white',
+                    },
+                    '& .MuiFormLabel-root': {
+                      color: 'rgba(255, 255, 255, 0.7)',
+                    },
+                    '& .MuiFormLabel-root.Mui-focused': {
+                      color: '#FFA500',
+                    },
+                  }}
+                  InputProps={{
+                    style: { color: 'white' }
                   }}
                 />
               </Box>
             </>
           )}
         </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={handleCloseDialog} variant="outlined">Cancel</Button>
-          <Button 
-            variant="contained" 
-            color="primary" 
-            onClick={handleAddToCart}
-            sx={{ 
-              px: 3,
-              borderRadius: '50px',
-              boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
-              background: 'linear-gradient(145deg, #FF5A5F 0%, #FF385C 100%)',
+        <DialogActions sx={{ px: 3, py: 3, backgroundColor: '#121212', borderTop: '1px solid rgba(255, 165, 0, 0.2)' }}>
+          <Button
+            onClick={handleCloseDialog}
+            variant="outlined"
+            sx={{
+              borderColor: 'rgba(255, 165, 0, 0.5)',
+              color: '#FFA500',
+              borderRadius: '4px',
+              '&:hover': {
+                borderColor: '#FFA500',
+                backgroundColor: 'rgba(255, 165, 0, 0.08)'
+              }
             }}
           >
-            Add to Cart - ${selectedDish?.price ? (selectedDish.price * quantity).toFixed(2) : '0.00'}
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleAddToCart}
+            sx={{
+              px: 3,
+              borderRadius: '4px',
+              boxShadow: '0 4px 10px rgba(0,0,0,0.3)',
+              backgroundColor: '#FFA500',
+              '&:hover': {
+                backgroundColor: '#E69500',
+              }
+            }}
+          >
+            Add to Cart - ${selectedDish ? (
+              selectedDish.is_offer === 1 ?
+              (calculateDiscountedPrice(selectedDish.price, selectedDish.discount) * quantity).toFixed(2) :
+              (selectedDish.price * quantity).toFixed(2)
+            ) : '0.00'}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Order Confirmation Dialog */}
-      <Dialog 
-        open={orderConfirmationOpen} 
-        onClose={handleCloseConfirmation} 
-        maxWidth="xs" 
-        fullWidth
-        PaperProps={{
-          sx: { borderRadius: '16px' }
-        }}
-      >
-        <Box 
-          sx={{ 
-            p: 4, 
-            textAlign: 'center',
-            background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
-          }}
-        >
-          <Box 
-            sx={{
-              width: 80,
-              height: 80,
-              borderRadius: '50%',
-              backgroundColor: 'success.lighter',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              mx: 'auto',
-              mb: 3,
-              color: 'success.main',
-            }}
-          >
-            <CheckCircleIcon fontSize="large" />
-          </Box>
-          <Typography variant="h5" gutterBottom fontWeight="bold">
-            Order Placed Successfully!
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Your order #{orderId} has been received
-          </Typography>
-          <Box 
-            sx={{ 
-              my: 3, 
-              p: 2, 
-              border: '1px dashed', 
-              borderColor: 'divider', 
-              borderRadius: '8px',
-              backgroundColor: 'background.paper',
-            }}
-          >
-            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-              Estimated Preparation Time
-            </Typography>
-            <Box display="flex" alignItems="center" justifyContent="center">
-              <TimerIcon color="primary" sx={{ mr: 1 }} />
-              <Typography variant="h6" color="primary.main" fontWeight="bold">
-                20-35 minutes
-              </Typography>
-            </Box>
-          </Box>
-          <Typography variant="body2" color="text.secondary" paragraph>
-            Please wait while our chef prepares your delicious meal. You can track your order status here.
-          </Typography>
-          <Button 
-            onClick={handleCloseConfirmation} 
-            variant="contained" 
-            color="primary" 
-            fullWidth
-            sx={{
-              py: 1.5,
-              borderRadius: '50px',
-              fontWeight: 'bold',
-              background: 'linear-gradient(145deg, #FF5A5F 0%, #FF385C 100%)',
-            }}
-          >
-            Track Order Status
-          </Button>
-        </Box>
-      </Dialog>
 
       {/* Snackbar for notifications */}
+      {/* Cart Dialog with CartDialog component */}
+      <CartDialog
+        open={cartDialogOpen}
+        onClose={handleCloseCartDialog}
+        cart={cart}
+        handleRemoveFromCart={handleRemoveFromCart}
+        calculateTotal={calculateTotal}
+        handlePlaceOrder={handlePlaceOrder}
+        currentOrder={currentOrder}
+        handleReorderCart={handleReorderCart}
+      />
+
+      {/* Order History Dialog */}
+      <OrderHistoryDialog
+        open={orderHistoryOpen}
+        onClose={handleCloseOrderHistory}
+        userOrders={userOrders}
+        loadingOrders={loadingOrders}
+        formatDate={formatDate}
+        getStatusLabel={getStatusLabel}
+        getStatusColor={getStatusColor}
+        refreshOrders={() => handleOpenOrderHistory()}
+      />
+
+      {/* Bottom App Bar with View Cart Button */}
+      <AppBar
+        position="fixed"
+        color="default"
+        sx={{
+          top: 'auto',
+          bottom: 0,
+          boxShadow: '0 -4px 10px rgba(0, 0, 0, 0.3)',
+          backgroundColor: '#000000',
+          borderTop: '1px solid rgba(255, 165, 0, 0.2)'
+        }}
+      >
+        <Toolbar>
+          <Button
+            variant="outlined"
+            color="primary"
+            startIcon={<HistoryIcon />}
+            onClick={handleOpenOrderHistory}
+            sx={{
+              borderRadius: '4px',
+              mr: 2,
+              borderColor: 'rgba(255, 165, 0, 0.5)',
+              borderWidth: '2px',
+              color: '#FFA500',
+              '&:hover': {
+                borderColor: '#FFA500',
+                backgroundColor: 'rgba(255, 165, 0, 0.1)'
+              }
+            }}
+          >
+            View Orders
+          </Button>
+          <Box sx={{ flexGrow: 1 }} />
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={
+              <Badge
+                badgeContent={cart.length}
+                color="error"
+                sx={{
+                  '& .MuiBadge-badge': {
+                    fontWeight: 'bold',
+                    fontSize: '0.8rem',
+                    minWidth: '18px',
+                    height: '18px',
+                    backgroundColor: '#000000',
+                    color: '#FFA500',
+                    border: '1px solid #FFA500'
+                  }
+                }}
+              >
+                <ShoppingCartIcon />
+              </Badge>
+            }
+            onClick={handleOpenCartDialog}
+            sx={{
+              py: 1.2,
+              px: 3,
+              borderRadius: '4px',
+              fontWeight: 'bold',
+              backgroundColor: '#FFA500',
+              boxShadow: '0 4px 10px rgba(0, 0, 0, 0.3)',
+              '&:hover': {
+                backgroundColor: '#E69500',
+                boxShadow: '0 6px 15px rgba(0, 0, 0, 0.4)',
+              },
+            }}
+          >
+            View Cart {cart.length > 0 && `• $${calculateTotal()}`}
+          </Button>
+          {currentOrder && (
+            <Button
+              variant="contained"
+              startIcon={<PaymentIcon />}
+              onClick={handleRequestPayment}
+              sx={{
+                ml: 2,
+                py: 1.2,
+                px: 3,
+                borderRadius: '4px',
+                fontWeight: 'bold',
+                backgroundColor: '#4DAA57',
+                color: '#FFFFFF',
+                border: '2px solid #4DAA57',
+                boxShadow: '0 4px 10px rgba(0, 0, 0, 0.3)',
+                position: 'relative',
+                overflow: 'hidden',
+                '&::after': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  background: 'linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0))',
+                  opacity: 0.5
+                },
+                '&:hover': {
+                  backgroundColor: '#3D8A47',
+                  boxShadow: '0 6px 15px rgba(0, 0, 0, 0.4)',
+                },
+              }}
+            >
+              Payment
+            </Button>
+          )}
+          <Box sx={{ flexGrow: 1 }} />
+        </Toolbar>
+      </AppBar>
+
+      {/* Add padding at the bottom to account for the bottom bar */}
+      <Box sx={{ height: 80 }} />
+
+      {/* Payment Dialog */}
+      <Dialog
+        open={paymentDialogOpen}
+        onClose={handleClosePaymentDialog}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '16px',
+            backgroundColor: '#121212',
+            color: 'white',
+            border: '1px solid rgba(255, 165, 0, 0.3)',
+          }
+        }}
+      >
+        <DialogTitle sx={{ borderBottom: '1px solid rgba(255, 165, 0, 0.2)' }}>
+          <Box display="flex" alignItems="center">
+            <PaymentIcon sx={{ mr: 2, color: '#FFA500' }} />
+            <Typography variant="h5" component="h2" fontWeight="bold" color="white">
+              Payment Details
+            </Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent dividers sx={{ borderColor: 'rgba(255, 165, 0, 0.2)' }}>
+          {unpaidOrders.length > 0 ? (
+            <Box>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 3,
+                  mb: 3,
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255, 165, 0, 0.2)',
+                  backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                  color: 'white'
+                }}
+              >
+                <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ color: '#FFA500' }}>
+                  Bill Summary
+                </Typography>
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="subtitle2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }} gutterBottom>
+                    Table #{unpaidOrders[0].table_number}
+                  </Typography>
+                  <Typography variant="subtitle2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                    {unpaidOrders.length} {unpaidOrders.length === 1 ? 'Order' : 'Orders'} to Pay
+                  </Typography>
+                </Box>
+
+                {/* Display each unpaid order */}
+                {unpaidOrders.map((order, orderIndex) => (
+                  <Box key={order.id} sx={{ mb: orderIndex < unpaidOrders.length - 1 ? 3 : 0 }}>
+                    <Divider sx={{ my: 2, backgroundColor: 'rgba(255, 165, 0, 0.2)' }} />
+                    <Typography variant="subtitle2" gutterBottom fontWeight="bold" color="white">
+                      Order #{order.id}
+                    </Typography>
+                    <List disablePadding>
+                      {order.items && order.items.length > 0 ? (
+                        order.items.map((item) => (
+                          <ListItem key={item.id} disablePadding sx={{ mb: 1 }}>
+                            <ListItemText
+                              primary={
+                                <Box display="flex" justifyContent="space-between">
+                                  <Typography variant="body2" color="white">
+                                    {item.dish?.name || "Unknown Dish"} x{item.quantity}
+                                  </Typography>
+                                  <Typography variant="body2" fontWeight="medium" color="white">
+                                    ${((item.dish?.price || 0) * item.quantity).toFixed(2)}
+                                  </Typography>
+                                </Box>
+                              }
+                            />
+                          </ListItem>
+                        ))
+                      ) : (
+                        <Typography variant="body2" color="rgba(255, 255, 255, 0.5)" sx={{ fontStyle: 'italic' }}>
+                          No items in this order
+                        </Typography>
+                      )}
+                    </List>
+                    <Box display="flex" justifyContent="flex-end" alignItems="center" sx={{ mt: 1 }}>
+                      <Typography variant="body2" fontWeight="medium" color="white">
+                        Order Subtotal: ${(order.items ? order.items.reduce((sum, item) => sum + (item.dish?.price || 0) * item.quantity, 0) : 0).toFixed(2)}
+                      </Typography>
+                    </Box>
+                  </Box>
+                ))}
+
+                <Divider sx={{ my: 2, backgroundColor: 'rgba(255, 165, 0, 0.2)' }} />
+
+                {/* Calculate totals across all orders */}
+                {(() => {
+                  // Calculate subtotal across all orders
+                  const subtotal = unpaidOrders.reduce((total, order) => {
+                    return total + (order.items ? order.items.reduce((sum, item) => sum + (item.dish?.price || 0) * item.quantity, 0) : 0);
+                  }, 0);
+
+                  // Calculate loyalty discount
+                  const loyaltyDiscountAmount = loyaltyDiscount.discount_percentage > 0
+                    ? subtotal * (loyaltyDiscount.discount_percentage / 100)
+                    : 0;
+
+                  // Calculate final total
+                  const finalTotal = (subtotal - loyaltyDiscountAmount - selectionOfferDiscount.discount_amount);
+
+                  return (
+                    <>
+                      <Box display="flex" justifyContent="space-between" alignItems="center">
+                        <Typography variant="subtitle1" color="white">Subtotal</Typography>
+                        <Typography variant="subtitle1" color="white">
+                          ${subtotal.toFixed(2)}
+                        </Typography>
+                      </Box>
+                      {loyaltyDiscount.discount_percentage > 0 && (
+                        <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mt: 1 }}>
+                          <Typography variant="subtitle1" color="success.main" sx={{ display: 'flex', alignItems: 'center' }}>
+                            <CardMembershipIcon fontSize="small" sx={{ mr: 1 }} />
+                            Loyalty Discount ({loyaltyDiscount.discount_percentage}%)
+                          </Typography>
+                          <Typography variant="subtitle1" color="success.main">
+                            -${loyaltyDiscountAmount.toFixed(2)}
+                          </Typography>
+                        </Box>
+                      )}
+                      {selectionOfferDiscount.discount_amount > 0 && (
+                        <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mt: 1 }}>
+                          <Typography variant="subtitle1" color="success.main" sx={{ display: 'flex', alignItems: 'center' }}>
+                            <LocalOfferIcon fontSize="small" sx={{ mr: 1 }} />
+                            Special Offer Discount
+                          </Typography>
+                          <Typography variant="subtitle1" color="success.main">
+                            -${selectionOfferDiscount.discount_amount.toFixed(2)}
+                          </Typography>
+                        </Box>
+                      )}
+                      <Divider sx={{ my: 2, backgroundColor: 'rgba(255, 165, 0, 0.2)' }} />
+                      <Box display="flex" justifyContent="space-between" alignItems="center">
+                        <Typography variant="h6" fontWeight="bold" color="white">Total</Typography>
+                        <Typography variant="h6" fontWeight="bold" color="#FFA500">
+                          ${finalTotal.toFixed(2)}
+                        </Typography>
+                      </Box>
+                    </>
+                  );
+                })()}
+
+                <Box sx={{ mt: 2, backgroundColor: 'rgba(0, 0, 0, 0.3)', p: 2, borderRadius: '8px', border: '1px dashed rgba(255, 165, 0, 0.3)' }}>
+                  <Typography variant="subtitle2" color="#FFA500" sx={{ fontWeight: 'bold', mb: 1 }}>
+                    Applied Discounts:
+                  </Typography>
+
+                  {loyaltyDiscount.discount_percentage > 0 ? (
+                    <Typography variant="body2" color="success.main" sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                      <CheckCircleIcon fontSize="small" sx={{ mr: 1, color: 'success.main' }} />
+                      {loyaltyDiscount.message}
+                    </Typography>
+                  ) : (
+                    <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.5)', fontStyle: 'italic', mb: 0.5 }}>
+                      No loyalty discount applied
+                    </Typography>
+                  )}
+
+                  {selectionOfferDiscount.discount_amount > 0 ? (
+                    <Typography variant="body2" color="success.main" sx={{ display: 'flex', alignItems: 'center' }}>
+                      <CheckCircleIcon fontSize="small" sx={{ mr: 1, color: 'success.main' }} />
+                      {selectionOfferDiscount.message}
+                    </Typography>
+                  ) : (
+                    <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.5)', fontStyle: 'italic' }}>
+                      No special offer discount applied
+                    </Typography>
+                  )}
+                </Box>
+              </Paper>
+
+              <Box sx={{ textAlign: 'center', mb: 2 }}>
+                <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }} paragraph>
+                  Please proceed to the counter to complete your payment or click the button below to mark as paid.
+                </Typography>
+              </Box>
+            </Box>
+          ) : (
+            <Box textAlign="center" py={4}>
+              <Typography variant="h6" color="white" gutterBottom>
+                No unpaid orders found
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                Please place an order first before requesting payment.
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 3, borderTop: '1px solid rgba(255, 165, 0, 0.2)' }}>
+          <Button
+            onClick={handleClosePaymentDialog}
+            variant="outlined"
+            sx={{
+              borderColor: 'rgba(255, 165, 0, 0.5)',
+              color: 'white',
+              '&:hover': {
+                borderColor: 'rgba(255, 165, 0, 0.8)',
+                backgroundColor: 'rgba(255, 165, 0, 0.1)'
+              }
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleCompletePayment}
+            disabled={unpaidOrders.length === 0}
+            sx={{
+              py: 1.5,
+              px: 4,
+              fontWeight: 'bold',
+              backgroundColor: '#FFA500',
+              color: '#000000',
+              borderRadius: 0,
+              '&:hover': {
+                backgroundColor: '#E69500',
+              },
+              '&.Mui-disabled': {
+                backgroundColor: 'rgba(255, 165, 0, 0.3)',
+                color: 'rgba(0, 0, 0, 0.5)'
+              }
+            }}
+          >
+            Complete Payment
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Feedback Dialog */}
+      <FeedbackDialog
+        open={feedbackDialogOpen}
+        onClose={() => setFeedbackDialogOpen(false)}
+        orderId={lastPaidOrderId}
+        personId={userId ? parseInt(userId) : null}
+      />
+
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert 
-          onClose={handleCloseSnackbar} 
-          severity={snackbar.severity} 
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
           variant="filled"
-          sx={{ 
+          sx={{
             width: '100%',
             borderRadius: '50px',
             boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
