@@ -22,8 +22,6 @@ import LoyaltyProgram from './pages/admin/LoyaltyProgram';
 import SelectionOffers from './pages/admin/SelectionOffers';
 import TableManagement from './pages/admin/TableManagement';
 import AdminSettings from './pages/admin/Settings';
-
-// Analysis Pages
 import AnalysisDashboard from './pages/analysis/Dashboard';
 import CustomerAnalysis from './pages/analysis/CustomerAnalysis';
 import DishAnalysis from './pages/analysis/DishAnalysis';
@@ -293,36 +291,43 @@ function App() {
       <CssBaseline />
       <Router>
         <Routes>
-          {/* Main Layout Routes */}
-          <Route element={<Layout />}>
-            <Route path="/" element={<Home />} />
-
-            {/* Chef Routes */}
-            <Route path="/chef" element={<ChefDashboard />} />
-            <Route path="/chef/orders" element={<ChefOrders />} />
+          {/* Public Routes */}
+          <Route path="/" element={<Layout />}>
+            <Route index element={<Home />} />
 
             {/* Customer Routes */}
-            <Route path="/customer" element={<CustomerLogin />} />
-            <Route path="/customer/menu" element={<CustomerMenu />} />
+            <Route path="/customer">
+              <Route index element={<CustomerLogin />} />
+              <Route path="menu" element={<CustomerMenu />} />
+              <Route path="auth/verify" element={<CustomerLogin />} />
+            </Route>
           </Route>
 
-          {/* Admin Layout Routes */}
-          <Route element={<AdminLayout />}>
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/dishes" element={<AdminDishes />} />
-            <Route path="/admin/offers" element={<AdminOffers />} />
-            <Route path="/admin/specials" element={<AdminSpecials />} />
-            <Route path="/admin/completed-orders" element={<CompletedOrders />} />
-            <Route path="/admin/loyalty" element={<LoyaltyProgram />} />
-            <Route path="/admin/selection-offers" element={<SelectionOffers />} />
-            <Route path="/admin/tables" element={<TableManagement />} />
-            <Route path="/admin/settings" element={<AdminSettings />} />
+          {/* Chef Routes - Protected */}
+          <Route path="/chef" element={<Layout />}>
+            <Route index element={<ChefDashboard />} />
+            <Route path="orders" element={<ChefOrders />} />
+          </Route>
+
+          {/* Admin Routes - Protected */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="dishes" element={<AdminDishes />} />
+            <Route path="offers" element={<AdminOffers />} />
+            <Route path="specials" element={<AdminSpecials />} />
+            <Route path="completed-orders" element={<CompletedOrders />} />
+            <Route path="loyalty" element={<LoyaltyProgram />} />
+            <Route path="selection-offers" element={<SelectionOffers />} />
+            <Route path="tables" element={<TableManagement />} />
+            <Route path="settings" element={<AdminSettings />} />
 
             {/* Analysis Routes */}
-            <Route path="/analysis" element={<AnalysisDashboard />} />
-            <Route path="/analysis/customer" element={<CustomerAnalysis />} />
-            <Route path="/analysis/dish" element={<DishAnalysis />} />
-            <Route path="/analysis/chef" element={<ChefAnalysis />} />
+            <Route path="analysis">
+              <Route index element={<AnalysisDashboard />} />
+              <Route path="customer" element={<CustomerAnalysis />} />
+              <Route path="dish" element={<DishAnalysis />} />
+              <Route path="chef" element={<ChefAnalysis />} />
+            </Route>
           </Route>
         </Routes>
       </Router>

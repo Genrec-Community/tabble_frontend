@@ -27,7 +27,59 @@ export const customerService = {
     }
   },
 
-  // Get offer dishes
+  // Authentication
+  login: async (credentials) => {
+    try {
+      const response = await api.post('/customer/api/login', credentials);
+      return response.data;
+    } catch (error) {
+      console.error('Error logging in:', error);
+      throw error;
+    }
+  },
+
+  register: async (userData) => {
+    try {
+      const response = await api.post('/customer/api/register', userData);
+      return response.data;
+    } catch (error) {
+      console.error('Error registering:', error);
+      throw error;
+    }
+  },
+
+  // Phone authentication
+  phoneAuth: async (phoneData) => {
+    try {
+      const response = await api.post('/customer/api/phone-auth', phoneData);
+      return response.data;
+    } catch (error) {
+      console.error('Error initiating phone auth:', error);
+      throw error;
+    }
+  },
+
+  verifyOtp: async (otpData) => {
+    try {
+      const response = await api.post('/customer/api/verify-otp', otpData);
+      return response.data;
+    } catch (error) {
+      console.error('Error verifying OTP:', error);
+      throw error;
+    }
+  },
+
+  registerPhoneUser: async (userData) => {
+    try {
+      const response = await api.post('/customer/api/register-phone-user', userData);
+      return response.data;
+    } catch (error) {
+      console.error('Error registering phone user:', error);
+      throw error;
+    }
+  },
+
+  // Menu related endpoints
   getOffers: async () => {
     try {
       const response = await api.get('/customer/api/offers');
@@ -38,7 +90,6 @@ export const customerService = {
     }
   },
 
-  // Get special dishes
   getSpecials: async () => {
     try {
       const response = await api.get('/customer/api/specials');
@@ -49,7 +100,6 @@ export const customerService = {
     }
   },
 
-  // Get all categories
   getCategories: async () => {
     try {
       const response = await api.get('/customer/api/categories');
@@ -60,13 +110,10 @@ export const customerService = {
     }
   },
 
-  // Create order
-  createOrder: async (orderData, personId) => {
-    let url = '/customer/api/orders';
-    if (personId) {
-      url += `?person_id=${personId}`;
-    }
+  // Order related endpoints
+  createOrder: async (orderData, personId = null) => {
     try {
+      const url = personId ? `/customer/api/orders?person_id=${personId}` : '/customer/api/orders';
       const response = await api.post(url, orderData);
       return response.data;
     } catch (error) {
@@ -75,7 +122,6 @@ export const customerService = {
     }
   },
 
-  // Get order by ID
   getOrder: async (orderId) => {
     try {
       const response = await api.get(`/customer/api/orders/${orderId}`);
@@ -86,7 +132,6 @@ export const customerService = {
     }
   },
 
-  // Get person's orders
   getPersonOrders: async (personId) => {
     try {
       const response = await api.get(`/customer/api/person/${personId}/orders`);
@@ -97,7 +142,6 @@ export const customerService = {
     }
   },
 
-  // Request payment for an order
   requestPayment: async (orderId) => {
     try {
       const response = await api.put(`/customer/api/orders/${orderId}/payment`);
@@ -108,13 +152,23 @@ export const customerService = {
     }
   },
 
-  // Cancel an order
   cancelOrder: async (orderId) => {
     try {
       const response = await api.put(`/customer/api/orders/${orderId}/cancel`);
       return response.data;
     } catch (error) {
       console.error('Error canceling order:', error);
+      throw error;
+    }
+  },
+
+  // Person related endpoints
+  getPerson: async (personId) => {
+    try {
+      const response = await api.get(`/customer/api/person/${personId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching person:', error);
       throw error;
     }
   }
@@ -153,7 +207,7 @@ export const chefService = {
       console.error('Error fetching completed orders count:', error);
       throw error;
     }
-  },
+  }
 };
 
 // Admin API services
@@ -161,7 +215,7 @@ export const adminService = {
   // Get hotel settings
   getSettings: async () => {
     try {
-      const response = await api.get('/settings');
+      const response = await api.get('/settings/');
       return response.data;
     } catch (error) {
       console.error('Error fetching settings:', error);
@@ -172,7 +226,7 @@ export const adminService = {
   // Update hotel settings
   updateSettings: async (formData) => {
     try {
-      const response = await api.put('/settings', formData, {
+      const response = await api.put('/settings/', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -184,7 +238,18 @@ export const adminService = {
     }
   },
 
-  // Generate bill PDF for a single order
+  // Order related endpoints
+  getOrders: async (status = null) => {
+    try {
+      const params = status ? { status } : {};
+      const response = await api.get('/admin/orders', { params });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      throw error;
+    }
+  },
+
   generateBill: async (orderId) => {
     try {
       const response = await api.get(`/admin/orders/${orderId}/bill`, {
@@ -197,10 +262,9 @@ export const adminService = {
     }
   },
 
-  // Generate bill PDF for multiple orders
   generateMultiBill: async (orderIds) => {
     try {
-      const response = await api.post(`/admin/orders/multi-bill`, orderIds, {
+      const response = await api.post('/admin/orders/multi-bill', orderIds, {
         responseType: 'blob',
       });
       return response.data;
@@ -210,10 +274,9 @@ export const adminService = {
     }
   },
 
-  // Merge two orders
   mergeOrders: async (sourceOrderId, targetOrderId) => {
     try {
-      const response = await api.post(`/admin/orders/merge`, null, {
+      const response = await api.post('/admin/orders/merge', null, {
         params: {
           source_order_id: sourceOrderId,
           target_order_id: targetOrderId
@@ -225,7 +288,18 @@ export const adminService = {
       throw error;
     }
   },
-  // Get all dishes
+
+  markOrderAsPaid: async (orderId) => {
+    try {
+      const response = await api.put(`/admin/orders/${orderId}/paid`);
+      return response.data;
+    } catch (error) {
+      console.error('Error marking order as paid:', error);
+      throw error;
+    }
+  },
+
+  // Dish and category management
   getDishes: async (isOffer = null, isSpecial = null) => {
     try {
       const params = {};
@@ -240,7 +314,6 @@ export const adminService = {
     }
   },
 
-  // Get offer dishes
   getOfferDishes: async () => {
     try {
       const response = await api.get('/admin/api/offers');
@@ -251,7 +324,6 @@ export const adminService = {
     }
   },
 
-  // Get special dishes
   getSpecialDishes: async () => {
     try {
       const response = await api.get('/admin/api/specials');
@@ -262,7 +334,6 @@ export const adminService = {
     }
   },
 
-  // Get all categories
   getCategories: async () => {
     try {
       const response = await api.get('/admin/api/categories');
@@ -273,7 +344,6 @@ export const adminService = {
     }
   },
 
-  // Create a new category
   createCategory: async (categoryName) => {
     try {
       const formData = new FormData();
@@ -286,7 +356,6 @@ export const adminService = {
     }
   },
 
-  // Create a new dish
   createDish: async (dishData) => {
     try {
       const formData = new FormData();
@@ -306,18 +375,6 @@ export const adminService = {
     }
   },
 
-  // Delete a dish
-  deleteDish: async (dishId) => {
-    try {
-      const response = await api.delete(`/admin/api/dishes/${dishId}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error deleting dish:', error);
-      throw error;
-    }
-  },
-
-  // Update a dish
   updateDish: async (dishId, dishData) => {
     try {
       const formData = new FormData();
@@ -337,19 +394,17 @@ export const adminService = {
     }
   },
 
-  // Get all orders
-  getOrders: async (status = null) => {
+  deleteDish: async (dishId) => {
     try {
-      const params = status ? { status } : {};
-      const response = await api.get('/admin/orders', { params });
+      const response = await api.delete(`/admin/api/dishes/${dishId}`);
       return response.data;
     } catch (error) {
-      console.error('Error fetching orders:', error);
+      console.error('Error deleting dish:', error);
       throw error;
     }
   },
 
-  // Get order statistics
+  // Stats
   getOrderStats: async () => {
     try {
       const response = await api.get('/admin/stats/orders');
@@ -358,21 +413,123 @@ export const adminService = {
       console.error('Error fetching order statistics:', error);
       throw error;
     }
-  },
+  }
+};
 
-  // Mark an order as paid
-  markOrderAsPaid: async (orderId) => {
+// Analytics API services  
+export const analyticsService = {
+  // Dashboard stats
+  getDashboardStats: async (startDate = null, endDate = null) => {
     try {
-      const response = await api.put(`/admin/orders/${orderId}/paid`);
+      const params = new URLSearchParams();
+      if (startDate) params.append('start_date', startDate);
+      if (endDate) params.append('end_date', endDate);
+      const response = await api.get(`/analytics/dashboard${params.toString() ? '?' + params.toString() : ''}`);
       return response.data;
     } catch (error) {
-      console.error('Error marking order as paid:', error);
+      console.error('Error fetching dashboard stats:', error);
       throw error;
     }
   },
 
-  // Get all loyalty program tiers
-  getLoyaltyTiers: async () => {
+  // Get top customers 
+  getTopCustomers: async (limit = 10) => {
+    try {
+      const response = await api.get(`/analytics/top-customers?limit=${limit}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching top customers:', error);
+      throw error;
+    }
+  },
+
+  // Get top dishes
+  getTopDishes: async (limit = 10) => {
+    try {
+      const response = await api.get(`/analytics/top-dishes?limit=${limit}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching top dishes:', error);
+      throw error;
+    }
+  },
+
+  // Get sales by category
+  getSalesByCategory: async () => {
+    try {
+      const response = await api.get('/analytics/sales-by-category');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching sales by category:', error);
+      throw error;
+    }
+  },
+
+  // Get sales over time
+  getSalesOverTime: async (days = 30) => {
+    try {
+      const response = await api.get(`/analytics/sales-over-time?days=${days}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching sales over time:', error);
+      throw error;
+    }
+  },
+
+  // Get chef performance
+  getChefPerformance: async (days = 30) => {
+    try {
+      const response = await api.get(`/analytics/chef-performance?days=${days}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching chef performance:', error);
+      throw error;
+    }
+  },
+
+  // Get table utilization
+  getTableUtilization: async () => {
+    try {
+      const response = await api.get('/analytics/table-utilization');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching table utilization:', error);
+      throw error;
+    }
+  },
+
+  // Get customer frequency analysis
+  getCustomerFrequency: async (startDate = null, endDate = null) => {
+    try {
+      const params = new URLSearchParams();
+      if (startDate) params.append('start_date', startDate);
+      if (endDate) params.append('end_date', endDate);
+      const response = await api.get(`/analytics/customer-frequency${params.toString() ? '?' + params.toString() : ''}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching customer frequency:', error);
+      throw error;
+    }
+  },
+
+  // Get feedback analysis
+  getFeedbackAnalysis: async (startDate = null, endDate = null) => {
+    try {
+      const params = new URLSearchParams();
+      if (startDate) params.append('start_date', startDate);
+      if (endDate) params.append('end_date', endDate);
+      const response = await api.get(`/analytics/feedback-analysis${params.toString() ? '?' + params.toString() : ''}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching feedback analysis:', error);
+      throw error;
+    }
+  }
+};
+
+// Loyalty API services
+export const loyaltyService = {
+  getAllTiers: async () => {
     try {
       const response = await api.get('/loyalty/');
       return response.data;
@@ -382,7 +539,26 @@ export const adminService = {
     }
   },
 
-  // Create a new loyalty tier
+  getActiveTiers: async () => {
+    try {
+      const response = await api.get('/loyalty/active');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching active loyalty tiers:', error);
+      throw error;
+    }
+  },
+
+  getLoyaltyTier: async (tierId) => {
+    try {
+      const response = await api.get(`/loyalty/${tierId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching loyalty tier:', error);
+      throw error;
+    }
+  },
+
   createLoyaltyTier: async (tierData) => {
     try {
       const response = await api.post('/loyalty/', tierData);
@@ -393,7 +569,6 @@ export const adminService = {
     }
   },
 
-  // Update a loyalty tier
   updateLoyaltyTier: async (tierId, tierData) => {
     try {
       const response = await api.put(`/loyalty/${tierId}`, tierData);
@@ -404,7 +579,6 @@ export const adminService = {
     }
   },
 
-  // Delete a loyalty tier
   deleteLoyaltyTier: async (tierId) => {
     try {
       const response = await api.delete(`/loyalty/${tierId}`);
@@ -415,52 +589,20 @@ export const adminService = {
     }
   },
 
-  // Get all selection offers
-  getSelectionOffers: async () => {
+  getDiscountForVisitCount: async (visitCount) => {
     try {
-      const response = await api.get('/selection-offers/');
+      const response = await api.get(`/loyalty/discount/${visitCount}`);
       return response.data;
     } catch (error) {
-      console.error('Error fetching selection offers:', error);
+      console.error('Error fetching discount for visit count:', error);
       throw error;
     }
-  },
+  }
+};
 
-  // Create a new selection offer
-  createSelectionOffer: async (offerData) => {
-    try {
-      const response = await api.post('/selection-offers/', offerData);
-      return response.data;
-    } catch (error) {
-      console.error('Error creating selection offer:', error);
-      throw error;
-    }
-  },
-
-  // Update a selection offer
-  updateSelectionOffer: async (offerId, offerData) => {
-    try {
-      const response = await api.put(`/selection-offers/${offerId}`, offerData);
-      return response.data;
-    } catch (error) {
-      console.error('Error updating selection offer:', error);
-      throw error;
-    }
-  },
-
-  // Delete a selection offer
-  deleteSelectionOffer: async (offerId) => {
-    try {
-      const response = await api.delete(`/selection-offers/${offerId}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error deleting selection offer:', error);
-      throw error;
-    }
-  },
-
-  // Get all tables
-  getTables: async () => {
+// Tables API services
+export const tableService = {
+  getAllTables: async () => {
     try {
       const response = await api.get('/tables/');
       return response.data;
@@ -470,18 +612,26 @@ export const adminService = {
     }
   },
 
-  // Get table status summary
-  getTableStatus: async () => {
+  getTable: async (tableId) => {
     try {
-      const response = await api.get('/tables/status/summary');
+      const response = await api.get(`/tables/${tableId}`);
       return response.data;
     } catch (error) {
-      console.error('Error fetching table status:', error);
+      console.error('Error fetching table:', error);
       throw error;
     }
   },
 
-  // Create a new table
+  getTableByNumber: async (tableNumber) => {
+    try {
+      const response = await api.get(`/tables/number/${tableNumber}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching table by number:', error);
+      throw error;
+    }
+  },
+
   createTable: async (tableData) => {
     try {
       const response = await api.post('/tables/', tableData);
@@ -492,7 +642,6 @@ export const adminService = {
     }
   },
 
-  // Create multiple tables at once
   createTablesBatch: async (numTables) => {
     try {
       const response = await api.post(`/tables/batch?num_tables=${numTables}`);
@@ -503,7 +652,6 @@ export const adminService = {
     }
   },
 
-  // Update a table
   updateTable: async (tableId, tableData) => {
     try {
       const response = await api.put(`/tables/${tableId}`, tableData);
@@ -514,7 +662,6 @@ export const adminService = {
     }
   },
 
-  // Delete a table
   deleteTable: async (tableId) => {
     try {
       const response = await api.delete(`/tables/${tableId}`);
@@ -525,7 +672,16 @@ export const adminService = {
     }
   },
 
-  // Set a table as occupied
+  getTableStatus: async () => {
+    try {
+      const response = await api.get('/tables/status/summary');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching table status:', error);
+      throw error;
+    }
+  },
+
   setTableOccupied: async (tableId, orderId = null) => {
     try {
       const url = orderId ? `/tables/${tableId}/occupy?order_id=${orderId}` : `/tables/${tableId}/occupy`;
@@ -537,18 +693,16 @@ export const adminService = {
     }
   },
 
-  // Set a table as occupied by table number
   setTableOccupiedByNumber: async (tableNumber) => {
     try {
       const response = await api.put(`/tables/number/${tableNumber}/occupy`);
       return response.data;
     } catch (error) {
-      console.error('Error setting table as occupied by table number:', error);
+      console.error('Error setting table as occupied by number:', error);
       throw error;
     }
   },
 
-  // Set a table as free
   setTableFree: async (tableId) => {
     try {
       const response = await api.put(`/tables/${tableId}/free`);
@@ -557,233 +711,123 @@ export const adminService = {
       console.error('Error setting table as free:', error);
       throw error;
     }
-  },
+  }
 };
 
-// Analytics API services
-export const analyticsService = {
-  // Get dashboard statistics
-  getDashboardStats: async (startDate = null, endDate = null) => {
+// Feedback API services
+export const feedbackService = {
+  getAllFeedback: async () => {
     try {
-      let url = '/analytics/dashboard';
-      const params = new URLSearchParams();
-
-      if (startDate) {
-        params.append('start_date', startDate);
-      }
-
-      if (endDate) {
-        params.append('end_date', endDate);
-      }
-
-      const queryString = params.toString();
-      if (queryString) {
-        url += `?${queryString}`;
-      }
-
-      const response = await api.get(url);
+      const response = await api.get('/feedback/');
       return response.data;
     } catch (error) {
-      console.error('Error fetching dashboard statistics:', error);
+      console.error('Error fetching feedback:', error);
       throw error;
     }
   },
 
-  // Get top customers
-  getTopCustomers: async (limit = 10, startDate = null, endDate = null) => {
+  createFeedback: async (feedbackData) => {
     try {
-      const params = new URLSearchParams();
-      params.append('limit', limit);
-
-      if (startDate) {
-        params.append('start_date', startDate);
-      }
-
-      if (endDate) {
-        params.append('end_date', endDate);
-      }
-
-      const response = await api.get(`/analytics/top-customers?${params.toString()}`);
+      const response = await api.post('/feedback/', feedbackData);
       return response.data;
     } catch (error) {
-      console.error('Error fetching top customers:', error);
+      console.error('Error creating feedback:', error);
       throw error;
     }
   },
 
-  // Get top dishes
-  getTopDishes: async (limit = 10, startDate = null, endDate = null) => {
+  getFeedbackByOrder: async (orderId) => {
     try {
-      const params = new URLSearchParams();
-      params.append('limit', limit);
-
-      if (startDate) {
-        params.append('start_date', startDate);
-      }
-
-      if (endDate) {
-        params.append('end_date', endDate);
-      }
-
-      const response = await api.get(`/analytics/top-dishes?${params.toString()}`);
+      const response = await api.get(`/feedback/order/${orderId}`);
       return response.data;
     } catch (error) {
-      console.error('Error fetching top dishes:', error);
+      console.error('Error fetching feedback by order:', error);
       throw error;
     }
   },
 
-  // Get sales by category
-  getSalesByCategory: async (startDate = null, endDate = null) => {
+  getFeedbackByPerson: async (personId) => {
     try {
-      let url = '/analytics/sales-by-category';
-      const params = new URLSearchParams();
-
-      if (startDate) {
-        params.append('start_date', startDate);
-      }
-
-      if (endDate) {
-        params.append('end_date', endDate);
-      }
-
-      const queryString = params.toString();
-      if (queryString) {
-        url += `?${queryString}`;
-      }
-
-      const response = await api.get(url);
+      const response = await api.get(`/feedback/person/${personId}`);
       return response.data;
     } catch (error) {
-      console.error('Error fetching sales by category:', error);
+      console.error('Error fetching feedback by person:', error);
+      throw error;
+    }
+  }
+};
+
+// Selection Offers API services
+export const selectionOfferService = {
+  getAllOffers: async () => {
+    try {
+      const response = await api.get('/selection-offers/');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching selection offers:', error);
       throw error;
     }
   },
 
-  // Get sales over time
-  getSalesOverTime: async (days = 30, startDate = null, endDate = null) => {
+  getActiveOffers: async () => {
     try {
-      const params = new URLSearchParams();
-      params.append('days', days);
-
-      if (startDate) {
-        params.append('start_date', startDate);
-      }
-
-      if (endDate) {
-        params.append('end_date', endDate);
-      }
-
-      const response = await api.get(`/analytics/sales-over-time?${params.toString()}`);
+      const response = await api.get('/selection-offers/active');
       return response.data;
     } catch (error) {
-      console.error('Error fetching sales over time:', error);
+      console.error('Error fetching active selection offers:', error);
       throw error;
     }
   },
 
-  // Get chef performance metrics
-  getChefPerformance: async (days = 30, startDate = null, endDate = null) => {
+  getOffer: async (offerId) => {
     try {
-      const params = new URLSearchParams();
-      params.append('days', days);
-
-      if (startDate) {
-        params.append('start_date', startDate);
-      }
-
-      if (endDate) {
-        params.append('end_date', endDate);
-      }
-
-      const response = await api.get(`/analytics/chef-performance?${params.toString()}`);
+      const response = await api.get(`/selection-offers/${offerId}`);
       return response.data;
     } catch (error) {
-      console.error('Error fetching chef performance:', error);
+      console.error('Error fetching selection offer:', error);
       throw error;
     }
   },
 
-  // Get table utilization statistics
-  getTableUtilization: async (startDate = null, endDate = null) => {
+  createOffer: async (offerData) => {
     try {
-      let url = '/analytics/table-utilization';
-      const params = new URLSearchParams();
-
-      if (startDate) {
-        params.append('start_date', startDate);
-      }
-
-      if (endDate) {
-        params.append('end_date', endDate);
-      }
-
-      const queryString = params.toString();
-      if (queryString) {
-        url += `?${queryString}`;
-      }
-
-      const response = await api.get(url);
+      const response = await api.post('/selection-offers/', offerData);
       return response.data;
     } catch (error) {
-      console.error('Error fetching table utilization:', error);
+      console.error('Error creating selection offer:', error);
       throw error;
     }
   },
 
-  // Get customer visit frequency analysis
-  getCustomerFrequency: async (startDate = null, endDate = null) => {
+  updateOffer: async (offerId, offerData) => {
     try {
-      let url = '/analytics/customer-frequency';
-      const params = new URLSearchParams();
-
-      if (startDate) {
-        params.append('start_date', startDate);
-      }
-
-      if (endDate) {
-        params.append('end_date', endDate);
-      }
-
-      const queryString = params.toString();
-      if (queryString) {
-        url += `?${queryString}`;
-      }
-
-      const response = await api.get(url);
+      const response = await api.put(`/selection-offers/${offerId}`, offerData);
       return response.data;
     } catch (error) {
-      console.error('Error fetching customer frequency:', error);
+      console.error('Error updating selection offer:', error);
       throw error;
     }
   },
 
-  // Get feedback analysis
-  getFeedbackAnalysis: async (startDate = null, endDate = null) => {
+  deleteOffer: async (offerId) => {
     try {
-      let url = '/analytics/feedback-analysis';
-      const params = new URLSearchParams();
-
-      if (startDate) {
-        params.append('start_date', startDate);
-      }
-
-      if (endDate) {
-        params.append('end_date', endDate);
-      }
-
-      const queryString = params.toString();
-      if (queryString) {
-        url += `?${queryString}`;
-      }
-
-      const response = await api.get(url);
+      const response = await api.delete(`/selection-offers/${offerId}`);
       return response.data;
     } catch (error) {
-      console.error('Error fetching feedback analysis:', error);
+      console.error('Error deleting selection offer:', error);
       throw error;
     }
   },
+
+  getDiscountForOrderAmount: async (orderAmount) => {
+    try {
+      const response = await api.get(`/selection-offers/discount/${orderAmount}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching discount for order amount:', error);
+      throw error;
+    }
+  }
 };
 
 export default api;

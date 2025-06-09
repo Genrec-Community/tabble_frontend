@@ -36,7 +36,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CardMembershipIcon from '@mui/icons-material/CardMembership';
 import PercentIcon from '@mui/icons-material/Percent';
-import { adminService } from '../../services/api';
+import { loyaltyService } from '../../services/api';
 
 // Styled components
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
@@ -91,7 +91,7 @@ const LoyaltyProgram = () => {
   const fetchLoyaltyTiers = async () => {
     try {
       setLoading(true);
-      const data = await adminService.getLoyaltyTiers();
+      const data = await loyaltyService.getAllTiers();
       setLoyaltyTiers(data);
     } catch (error) {
       console.error('Error fetching loyalty tiers:', error);
@@ -108,38 +108,52 @@ const LoyaltyProgram = () => {
   // Handle form input change
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+
+    // Handle numeric inputs
+    if (type === 'number') {
+      const numValue = value === '' ? '' : Number(value);
+      if (name === 'visit_count' && (numValue < 1 || !Number.isInteger(numValue))) {
+        setErrors({
+          ...errors,
+          [name]: 'Visit count must be a positive integer'
+        });
+      } else if (name === 'discount_percentage' && (numValue < 0 || numValue > 100)) {
+        setErrors({
+          ...errors,
+          [name]: 'Discount must be between 0 and 100'
+        });
+      } else {
+        setErrors({
+          ...errors,
+          [name]: null
+        });
+      }
+    }
+
     setFormData({
       ...formData,
       [name]: type === 'checkbox' ? checked : value
     });
-    
-    // Clear error for this field
-    if (errors[name]) {
-      setErrors({
-        ...errors,
-        [name]: null
-      });
-    }
   };
 
   // Validate form
   const validateForm = () => {
     const newErrors = {};
-    
-    if (!formData.visit_count) {
+    const visitCount = parseInt(formData.visit_count);
+    const discountPercentage = parseFloat(formData.discount_percentage);
+
+    if (!formData.visit_count || isNaN(visitCount)) {
       newErrors.visit_count = 'Visit count is required';
-    } else if (parseInt(formData.visit_count) <= 0) {
-      newErrors.visit_count = 'Visit count must be greater than 0';
+    } else if (visitCount < 1 || !Number.isInteger(visitCount)) {
+      newErrors.visit_count = 'Visit count must be a positive integer';
     }
-    
-    if (!formData.discount_percentage) {
+
+    if (!formData.discount_percentage || isNaN(discountPercentage)) {
       newErrors.discount_percentage = 'Discount percentage is required';
-    } else if (parseFloat(formData.discount_percentage) <= 0) {
-      newErrors.discount_percentage = 'Discount percentage must be greater than 0';
-    } else if (parseFloat(formData.discount_percentage) > 100) {
-      newErrors.discount_percentage = 'Discount percentage cannot exceed 100%';
+    } else if (discountPercentage < 0 || discountPercentage > 100) {
+      newErrors.discount_percentage = 'Discount must be between 0 and 100';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -188,16 +202,18 @@ const LoyaltyProgram = () => {
   // Submit form to create or update tier
   const handleSubmit = async () => {
     if (!validateForm()) return;
-    
+
+    const tierData = {
+      visit_count: parseInt(formData.visit_count),
+      discount_percentage: parseFloat(formData.discount_percentage),
+      is_active: formData.is_active
+    };
+
     try {
       if (editMode) {
         // Update existing tier
-        await adminService.updateLoyaltyTier(currentTier.id, {
-          visit_count: parseInt(formData.visit_count),
-          discount_percentage: parseFloat(formData.discount_percentage),
-          is_active: formData.is_active
-        });
-        
+        await loyaltyService.updateLoyaltyTier(currentTier.id, tierData);
+
         setSnackbar({
           open: true,
           message: 'Loyalty tier updated successfully',
@@ -205,32 +221,37 @@ const LoyaltyProgram = () => {
         });
       } else {
         // Create new tier
-        await adminService.createLoyaltyTier({
-          visit_count: parseInt(formData.visit_count),
-          discount_percentage: parseFloat(formData.discount_percentage),
-          is_active: formData.is_active
-        });
-        
+        await loyaltyService.createLoyaltyTier(tierData);
+
         setSnackbar({
           open: true,
           message: 'Loyalty tier created successfully',
           severity: 'success'
         });
       }
-      
+
       // Refresh data and close dialog
       fetchLoyaltyTiers();
       handleCloseDialog();
     } catch (error) {
       console.error('Error saving loyalty tier:', error);
-      
-      // Check for specific error messages
-      if (error.response && error.response.data && error.response.data.detail) {
-        if (error.response.data.detail.includes('already exists')) {
+
+      // Handle specific API errors
+      if (error.response?.data?.detail) {
+        if (typeof error.response.data.detail === 'string' &&
+          error.response.data.detail.includes('already exists')) {
           setErrors({
             ...errors,
             visit_count: 'A tier with this visit count already exists'
           });
+        } else if (Array.isArray(error.response.data.detail)) {
+          // Handle validation errors from FastAPI
+          const validationErrors = {};
+          error.response.data.detail.forEach(err => {
+            const field = err.loc[err.loc.length - 1];
+            validationErrors[field] = err.msg;
+          });
+          setErrors(validationErrors);
         } else {
           setSnackbar({
             open: true,
@@ -241,7 +262,7 @@ const LoyaltyProgram = () => {
       } else {
         setSnackbar({
           open: true,
-          message: 'Error saving loyalty tier',
+          message: 'Error saving loyalty tier. Please try again.',
           severity: 'error'
         });
       }
@@ -251,14 +272,14 @@ const LoyaltyProgram = () => {
   // Delete tier
   const handleDeleteTier = async () => {
     try {
-      await adminService.deleteLoyaltyTier(tierToDelete.id);
-      
+      await loyaltyService.deleteLoyaltyTier(tierToDelete.id);
+
       setSnackbar({
         open: true,
         message: 'Loyalty tier deleted successfully',
         severity: 'success'
       });
-      
+
       // Refresh data and close dialog
       fetchLoyaltyTiers();
       handleCloseDeleteDialog();
@@ -266,7 +287,7 @@ const LoyaltyProgram = () => {
       console.error('Error deleting loyalty tier:', error);
       setSnackbar({
         open: true,
-        message: 'Error deleting loyalty tier',
+        message: 'Error deleting loyalty tier. Please try again.',
         severity: 'error'
       });
     }
@@ -353,13 +374,13 @@ const LoyaltyProgram = () => {
 
         <Box mb={3}>
           <Typography variant="body1" paragraph>
-            Set up loyalty tiers based on customer visit counts. When a customer reaches a specific visit count, 
+            Set up loyalty tiers based on customer visit counts. When a customer reaches a specific visit count,
             they will automatically receive the corresponding discount on their orders.
           </Typography>
           <Alert severity="info" sx={{ mb: 2 }}>
             <Typography variant="body2">
-              <strong>How it works:</strong> When a customer's visit count matches or exceeds a tier threshold, 
-              they will receive the discount percentage defined for that tier. If a customer qualifies for multiple tiers, 
+              <strong>How it works:</strong> When a customer's visit count matches or exceeds a tier threshold,
+              they will receive the discount percentage defined for that tier. If a customer qualifies for multiple tiers,
               the highest applicable discount will be applied.
             </Typography>
           </Alert>
