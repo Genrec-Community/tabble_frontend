@@ -7,11 +7,15 @@ const getBaseUrl = () => {
   }
 
   // In development, use the current hostname (works with both localhost and IP)
-  const protocol = window.location.protocol;
-  const hostname = window.location.hostname;
-  const port = '8000'; // Backend port
+  // This error happened, coz, we didnt setup the URL correctly
+  // const protocol = window.location.protocol;
+  // const hostname = window.location.hostname;
+  // const port = '8000'; // Backend port
+  const protocol = "https:"
+  const hostname = "tabble.onrender.com"
+  return `${protocol}//${hostname}`;
 
-  return `${protocol}//${hostname}:${port}`;
+  // return `${protocol}//${hostname}:${port}`;
 };
 
 // Create an axios instance with default config
