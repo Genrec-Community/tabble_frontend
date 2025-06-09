@@ -37,6 +37,7 @@ import FeedbackDialog from '../../components/FeedbackDialog';
 import { customerService } from '../../services/api';
 import OrderHistoryDialog from './components/OrderHistoryDialog';
 import CartDialog from './components/CartDialog';
+import OrderConfirmationDialog from './components/OrderConfirmationDialog';
 
 // Import components
 import HeroBanner from './components/HeroBanner';
@@ -45,6 +46,13 @@ import TodaySpecials from './components/TodaySpecials';
 import MenuCategories from './components/MenuCategories';
 // import FeaturedDishes from './components/FeaturedDishes';
 import MenuItemsGrid from './components/MenuItemsGrid';
+
+// Helper function to get correct image URL
+const getImageUrl = (imagePath) => {
+  if (!imagePath) return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80';
+  if (imagePath.startsWith('http')) return imagePath;
+  return `https://tabble.onrender.com${imagePath}`;
+};
 
 const CustomerMenu = () => {
   const theme = useTheme();
@@ -76,8 +84,8 @@ const CustomerMenu = () => {
   const [selectedDish, setSelectedDish] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [remarks, setRemarks] = useState('');
-  // const [orderConfirmationOpen, setOrderConfirmationOpen] = useState(false);
-  // const [orderId, setOrderId] = useState(null);
+  const [orderConfirmationDialogOpen, setOrderConfirmationDialogOpen] = useState(false);
+  const [lastOrderId, setLastOrderId] = useState(null);
   const [cartDialogOpen, setCartDialogOpen] = useState(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -373,47 +381,45 @@ const CustomerMenu = () => {
     return (price - (price * discount / 100)).toFixed(2);
   };
 
-  // Place order
+  // Handle place order
   const handlePlaceOrder = async () => {
-    try {
-      // Get username and password from URL parameters if available
-      const urlParams = new URLSearchParams(window.location.search);
-      const username = urlParams.get('username');
-      const password = urlParams.get('password');
+    if (cart.length === 0) return;
 
-      // Sort cart items by position to maintain the order they were added
-      const sortedCart = [...cart].sort((a, b) => a.position - b.position);
+    try {
+      const orderItems = cart.map(item => ({
+        dish_id: item.dish_id,
+        quantity: item.quantity,
+        remarks: item.remarks || null
+      }));
 
       const orderData = {
         table_number: parseInt(tableNumber),
         unique_id: uniqueId,
-        // Include username and password if available
-        ...(username && { username }),
-        ...(password && { password }),
-        items: sortedCart.map(item => ({
-          dish_id: item.dish_id,
-          quantity: item.quantity,
-          remarks: item.remarks
-        }))
+        items: orderItems
       };
 
-      // Pass the person_id as a query parameter
-      const response = await customerService.createOrder(orderData, userId);
-      setCurrentOrder(response);
+      const order = await customerService.createOrder(orderData, userId || null);
+      setCart([]);
+      setCurrentOrder(order);
+      setOrderConfirmationDialogOpen(true);
+      setLastOrderId(order.id);
 
-      // Show order confirmation
+      if (userId) {
+        const orders = await customerService.getPersonOrders(userId);
+        setUserOrders(orders);
+      }
+
       setSnackbar({
         open: true,
-        message: `Order placed successfully! Order #${response.id}`,
+        message: 'Order placed successfully!',
         severity: 'success'
       });
-
-      setCart([]);
+      setCartDialogOpen(false);
     } catch (error) {
       console.error('Error placing order:', error);
       setSnackbar({
         open: true,
-        message: 'Error placing order',
+        message: 'Error placing order. Please try again.',
         severity: 'error'
       });
     }
@@ -836,7 +842,7 @@ const CustomerMenu = () => {
                 }}
               >
                 <img
-                  src={selectedDish.image_path || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80'}
+                  src={getImageUrl(selectedDish.image_path)}
                   alt={selectedDish.name}
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
@@ -1011,14 +1017,19 @@ const CustomerMenu = () => {
           >
             Add to Cart - ${selectedDish ? (
               selectedDish.is_offer === 1 ?
-              (calculateDiscountedPrice(selectedDish.price, selectedDish.discount) * quantity).toFixed(2) :
-              (selectedDish.price * quantity).toFixed(2)
+                (calculateDiscountedPrice(selectedDish.price, selectedDish.discount) * quantity).toFixed(2) :
+                (selectedDish.price * quantity).toFixed(2)
             ) : '0.00'}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Order Confirmation Dialog */}
+      <OrderConfirmationDialog
+        open={orderConfirmationDialogOpen}
+        onClose={() => setOrderConfirmationDialogOpen(false)}
+        orderId={lastOrderId}
+      />
 
       {/* Snackbar for notifications */}
       {/* Cart Dialog with CartDialog component */}

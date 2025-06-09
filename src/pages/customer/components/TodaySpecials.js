@@ -35,6 +35,13 @@ const float = keyframes`
   }
 `;
 
+// Helper function to get correct image URL
+const getImageUrl = (imagePath) => {
+  if (!imagePath) return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80';
+  if (imagePath.startsWith('http')) return imagePath;
+  return `https://tabble.onrender.com${imagePath}`;
+};
+
 const TodaySpecials = ({ specials, loading, handleOpenDialog }) => {
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -162,17 +169,10 @@ const TodaySpecials = ({ specials, loading, handleOpenDialog }) => {
               <Box sx={{ position: 'relative', height: '60%' }}>
                 <CardMedia
                   component="img"
-                  sx={{
-                    height: '100%',
-                    width: '100%',
-                    objectFit: 'cover',
-                    transition: 'transform 0.5s ease',
-                    '&:hover': {
-                      transform: 'scale(1.05)',
-                    }
-                  }}
-                  image={special.image_path || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80'}
+                  height="200"
+                  image={getImageUrl(special.image_path)}
                   alt={special.name}
+                  sx={{ objectFit: 'cover' }}
                 />
 
                 {/* Diagonal ribbon */}

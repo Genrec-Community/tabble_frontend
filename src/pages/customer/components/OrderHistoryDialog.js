@@ -25,6 +25,14 @@ import RestaurantIcon from '@mui/icons-material/Restaurant';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import TableRestaurantIcon from '@mui/icons-material/TableRestaurant';
 
+
+// Helper function to get correct image URL
+const getImageUrl = (imagePath) => {
+  if (!imagePath) return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80';
+  if (imagePath.startsWith('http')) return imagePath;
+  return `https://tabble.onrender.com${imagePath}`;
+};
+
 const OrderHistoryDialog = ({
   open,
   onClose,
@@ -133,8 +141,8 @@ const OrderHistoryDialog = ({
                         width: '100%',
                         height: '4px',
                         backgroundColor: order.status === 'completed' ? '#4DAA57' :
-                                        order.status === 'in_progress' ? '#FFA500' :
-                                        order.status === 'pending' ? '#2196F3' : '#FF385C'
+                          order.status === 'in_progress' ? '#FFA500' :
+                            order.status === 'pending' ? '#2196F3' : '#FF385C'
                       }} />
 
                       <CardHeader
@@ -153,14 +161,14 @@ const OrderHistoryDialog = ({
                               label={getStatusLabel(order.status)}
                               sx={{
                                 backgroundColor: order.status === 'completed' ? 'rgba(77, 170, 87, 0.2)' :
-                                                order.status === 'in_progress' ? 'rgba(255, 165, 0, 0.2)' :
-                                                order.status === 'pending' ? 'rgba(33, 150, 243, 0.2)' : 'rgba(255, 56, 92, 0.2)',
+                                  order.status === 'in_progress' ? 'rgba(255, 165, 0, 0.2)' :
+                                    order.status === 'pending' ? 'rgba(33, 150, 243, 0.2)' : 'rgba(255, 56, 92, 0.2)',
                                 color: order.status === 'completed' ? '#4DAA57' :
-                                      order.status === 'in_progress' ? '#FFA500' :
-                                      order.status === 'pending' ? '#2196F3' : '#FF385C',
+                                  order.status === 'in_progress' ? '#FFA500' :
+                                    order.status === 'pending' ? '#2196F3' : '#FF385C',
                                 border: `1px solid ${order.status === 'completed' ? 'rgba(77, 170, 87, 0.3)' :
-                                                    order.status === 'in_progress' ? 'rgba(255, 165, 0, 0.3)' :
-                                                    order.status === 'pending' ? 'rgba(33, 150, 243, 0.3)' : 'rgba(255, 56, 92, 0.3)'}`,
+                                  order.status === 'in_progress' ? 'rgba(255, 165, 0, 0.3)' :
+                                    order.status === 'pending' ? 'rgba(33, 150, 243, 0.3)' : 'rgba(255, 56, 92, 0.3)'}`,
                                 fontWeight: 'bold',
                                 fontSize: '0.9rem',
                                 height: '28px'
@@ -211,15 +219,12 @@ const OrderHistoryDialog = ({
                                   primary={
                                     <Box display="flex" justifyContent="space-between" alignItems="center">
                                       <Box display="flex" alignItems="center">
-                                        <Avatar sx={{
-                                          width: 24,
-                                          height: 24,
-                                          bgcolor: 'rgba(255, 165, 0, 0.2)',
-                                          color: '#FFA500',
-                                          fontSize: '0.8rem',
-                                          mr: 1.5
-                                        }}>
-                                          {index + 1}
+                                        <Avatar sx={{ mr: 2 }}>
+                                          <img
+                                            src={getImageUrl(item.dish?.image_path)}
+                                            alt={item.dish?.name || "Unknown Dish"}
+                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                          />
                                         </Avatar>
                                         <Typography variant="body1" color="#FFFFFF">
                                           {item.dish?.name || "Unknown Dish"}

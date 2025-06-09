@@ -35,6 +35,13 @@ const CartDialog = ({
   currentOrder,
   handleReorderCart
 }) => {
+  // Helper function to get correct image URL
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80';
+    if (imagePath.startsWith('http')) return imagePath;
+    return `https://tabble.onrender.com${imagePath}`;
+  };
+
   return (
     <Dialog
       open={open}
@@ -199,106 +206,106 @@ const CartDialog = ({
                         </IconButton>
                       </Box>
                     }
-                >
-                  <Box sx={{ display: 'flex', width: '100%' }}>
-                    <Box
-                      sx={{
-                        width: 75,
-                        height: 75,
-                        borderRadius: '8px',
-                        overflow: 'hidden',
-                        mr: 2.5,
-                        flexShrink: 0,
-                        border: '2px solid rgba(255, 165, 0, 0.3)',
-                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
-                      }}
-                    >
-                      <img
-                        src={item.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80'}
-                        alt={item.dish_name}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      />
-                    </Box>
-                    <Box sx={{ flexGrow: 1, pr: 3 }}>
-                      <Box display="flex" alignItems="center">
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            minWidth: '38px',
-                            height: '38px',
-                            borderRadius: '50%',
-                            backgroundColor: '#FFA500',
-                            color: '#000000',
-                            fontWeight: 'bold',
-                            mr: 2,
-                            fontSize: '1.2rem',
-                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
-                          }}
-                        >
-                          {index + 1}
-                        </Box>
-                        <Typography variant="h6" fontWeight="bold" color="#FFFFFF">
-                          {item.dish_name}
-                        </Typography>
-                        <Chip
-                          label={`x${item.quantity}`}
-                          size="medium"
-                          sx={{
-                            ml: 1.5,
-                            height: '26px',
-                            fontSize: '0.9rem',
-                            backgroundColor: 'rgba(255, 165, 0, 0.2)',
-                            color: '#FFA500',
-                            fontWeight: 'bold',
-                            border: '1px solid rgba(255, 165, 0, 0.3)'
-                          }}
+                  >
+                    <Box sx={{ display: 'flex', width: '100%' }}>
+                      <Box
+                        sx={{
+                          width: 75,
+                          height: 75,
+                          borderRadius: '8px',
+                          overflow: 'hidden',
+                          mr: 2.5,
+                          flexShrink: 0,
+                          border: '2px solid rgba(255, 165, 0, 0.3)',
+                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
+                        }}
+                      >
+                        <img
+                          src={getImageUrl(item.image)}
+                          alt={item.dish_name}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         />
                       </Box>
-                      {item.remarks && (
-                        <Typography variant="body2" display="block" color="text.secondary" sx={{
-                          fontStyle: 'italic',
-                          mt: 1,
-                          backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                          padding: '4px 8px',
-                          borderRadius: '4px',
-                          border: '1px dashed rgba(255, 255, 255, 0.1)'
-                        }}>
-                          Note: {item.remarks}
-                        </Typography>
-                      )}
-                      {item.is_offer === 1 ? (
-                        <Box display="flex" alignItems="center" mt={1.5}>
-                          <Typography variant="body2" color="text.secondary" sx={{ textDecoration: 'line-through', mr: 1.5 }}>
-                            ${(item.original_price * item.quantity).toFixed(2)}
-                          </Typography>
-                          <Typography variant="h6" color="#FF385C" fontWeight="bold">
-                            ${(item.price * item.quantity).toFixed(2)}
+                      <Box sx={{ flexGrow: 1, pr: 3 }}>
+                        <Box display="flex" alignItems="center">
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              minWidth: '38px',
+                              height: '38px',
+                              borderRadius: '50%',
+                              backgroundColor: '#FFA500',
+                              color: '#000000',
+                              fontWeight: 'bold',
+                              mr: 2,
+                              fontSize: '1.2rem',
+                              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
+                            }}
+                          >
+                            {index + 1}
+                          </Box>
+                          <Typography variant="h6" fontWeight="bold" color="#FFFFFF">
+                            {item.dish_name}
                           </Typography>
                           <Chip
-                            label={`${item.discount}% OFF`}
-                            size="small"
+                            label={`x${item.quantity}`}
+                            size="medium"
                             sx={{
                               ml: 1.5,
-                              height: '24px',
-                              fontSize: '0.8rem',
-                              backgroundColor: 'rgba(255, 56, 92, 0.15)',
-                              color: '#FF385C',
+                              height: '26px',
+                              fontSize: '0.9rem',
+                              backgroundColor: 'rgba(255, 165, 0, 0.2)',
+                              color: '#FFA500',
                               fontWeight: 'bold',
-                              border: '1px solid rgba(255, 56, 92, 0.3)'
+                              border: '1px solid rgba(255, 165, 0, 0.3)'
                             }}
                           />
                         </Box>
-                      ) : (
-                        <Typography variant="h6" color="#FFA500" fontWeight="bold" sx={{ mt: 1.5 }}>
-                          ${(item.price * item.quantity).toFixed(2)}
-                        </Typography>
-                      )}
+                        {item.remarks && (
+                          <Typography variant="body2" display="block" color="text.secondary" sx={{
+                            fontStyle: 'italic',
+                            mt: 1,
+                            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            border: '1px dashed rgba(255, 255, 255, 0.1)'
+                          }}>
+                            Note: {item.remarks}
+                          </Typography>
+                        )}
+                        {item.is_offer === 1 ? (
+                          <Box display="flex" alignItems="center" mt={1.5}>
+                            <Typography variant="body2" color="text.secondary" sx={{ textDecoration: 'line-through', mr: 1.5 }}>
+                              ${(item.original_price * item.quantity).toFixed(2)}
+                            </Typography>
+                            <Typography variant="h6" color="#FF385C" fontWeight="bold">
+                              ${(item.price * item.quantity).toFixed(2)}
+                            </Typography>
+                            <Chip
+                              label={`${item.discount}% OFF`}
+                              size="small"
+                              sx={{
+                                ml: 1.5,
+                                height: '24px',
+                                fontSize: '0.8rem',
+                                backgroundColor: 'rgba(255, 56, 92, 0.15)',
+                                color: '#FF385C',
+                                fontWeight: 'bold',
+                                border: '1px solid rgba(255, 56, 92, 0.3)'
+                              }}
+                            />
+                          </Box>
+                        ) : (
+                          <Typography variant="h6" color="#FFA500" fontWeight="bold" sx={{ mt: 1.5 }}>
+                            ${(item.price * item.quantity).toFixed(2)}
+                          </Typography>
+                        )}
+                      </Box>
                     </Box>
-                  </Box>
-                </ListItem>
-              ))}
+                  </ListItem>
+                ))}
               </List>
             </Box>
           )}

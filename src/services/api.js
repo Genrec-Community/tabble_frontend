@@ -1,21 +1,8 @@
 import axios from 'axios';
 
-// Get the base URL dynamically based on the current window location
+// Get the base URL for the API server
 const getBaseUrl = () => {
-  if (process.env.NODE_ENV === 'production') {
-    return '/api';
-  }
-
-  // In development, use the current hostname (works with both localhost and IP)
-  // This error happened, coz, we didnt setup the URL correctly
-  // const protocol = window.location.protocol;
-  // const hostname = window.location.hostname;
-  // const port = '8000'; // Backend port
-  const protocol = "https:"
-  const hostname = "tabble.onrender.com"
-  return `${protocol}//${hostname}`;
-
-  // return `${protocol}//${hostname}:${port}`;
+  return 'https://tabble.onrender.com';
 };
 
 // Create an axios instance with default config
@@ -73,15 +60,39 @@ export const customerService = {
     }
   },
 
-  // Create a new order
-  createOrder: async (orderData, personId = null) => {
+  // Create order
+  createOrder: async (orderData, personId) => {
+    let url = '/customer/api/orders';
+    if (personId) {
+      url += `?person_id=${personId}`;
+    }
     try {
-      // Add person_id as a query parameter if provided
-      const params = personId ? { person_id: personId } : {};
-      const response = await api.post('/customer/api/orders', orderData, { params });
+      const response = await api.post(url, orderData);
       return response.data;
     } catch (error) {
       console.error('Error creating order:', error);
+      throw error;
+    }
+  },
+
+  // Get order by ID
+  getOrder: async (orderId) => {
+    try {
+      const response = await api.get(`/customer/api/orders/${orderId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching order:', error);
+      throw error;
+    }
+  },
+
+  // Get person's orders
+  getPersonOrders: async (personId) => {
+    try {
+      const response = await api.get(`/customer/api/person/${personId}/orders`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching person orders:', error);
       throw error;
     }
   },
@@ -103,88 +114,10 @@ export const customerService = {
       const response = await api.put(`/customer/api/orders/${orderId}/cancel`);
       return response.data;
     } catch (error) {
-      console.error('Error cancelling order:', error);
+      console.error('Error canceling order:', error);
       throw error;
     }
-  },
-
-  // Get orders by person ID
-  getPersonOrders: async (personId) => {
-    try {
-      const response = await api.get(`/customer/api/person/${personId}/orders`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching person orders:', error);
-      throw error;
-    }
-  },
-
-  // Get person details
-  getPerson: async (personId) => {
-    try {
-      const response = await api.get(`/customer/api/person/${personId}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching person details:', error);
-      throw error;
-    }
-  },
-
-  // Set a table as occupied by table number
-  setTableOccupiedByNumber: async (tableNumber) => {
-    try {
-      const response = await api.put(`/tables/number/${tableNumber}/occupy`);
-      return response.data;
-    } catch (error) {
-      console.error('Error setting table as occupied by number:', error);
-      // Don't throw error, just log it
-      return null;
-    }
-  },
-
-  // Submit feedback
-  submitFeedback: async (feedbackData) => {
-    try {
-      const response = await api.post('/feedback/', feedbackData);
-      return response.data;
-    } catch (error) {
-      console.error('Error submitting feedback:', error);
-      throw error;
-    }
-  },
-
-  // Get feedback by order ID
-  getFeedbackByOrder: async (orderId) => {
-    try {
-      const response = await api.get(`/feedback/order/${orderId}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching feedback:', error);
-      throw error;
-    }
-  },
-
-  // Get loyalty discount for visit count
-  getLoyaltyDiscount: async (visitCount) => {
-    try {
-      const response = await api.get(`/loyalty/discount/${visitCount}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching loyalty discount:', error);
-      return { discount_percentage: 0, message: 'No loyalty discount available' };
-    }
-  },
-
-  // Get selection offer discount for order amount
-  getSelectionOfferDiscount: async (orderAmount) => {
-    try {
-      const response = await api.get(`/selection-offers/discount/${orderAmount}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching selection offer discount:', error);
-      return { discount_amount: 0, message: 'No selection offer discount available' };
-    }
-  },
+  }
 };
 
 // Chef API services
@@ -610,7 +543,7 @@ export const adminService = {
       const response = await api.put(`/tables/number/${tableNumber}/occupy`);
       return response.data;
     } catch (error) {
-      console.error('Error setting table as occupied by number:', error);
+      console.error('Error setting table as occupied by table number:', error);
       throw error;
     }
   },

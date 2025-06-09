@@ -42,6 +42,13 @@ const shine = keyframes`
   }
 `;
 
+// Helper function to get correct image URL
+const getImageUrl = (imagePath) => {
+  if (!imagePath) return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80';
+  if (imagePath.startsWith('http')) return imagePath;
+  return `https://tabble.onrender.com${imagePath}`;
+};
+
 const SpecialOffers = ({ offers, loading, handleOpenDialog, calculateDiscountedPrice }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -241,12 +248,10 @@ const SpecialOffers = ({ offers, loading, handleOpenDialog, calculateDiscountedP
               }}>
                 <CardMedia
                   component="img"
-                  sx={{
-                    height: '100%',
-                    objectFit: 'cover',
-                  }}
-                  image={offer.image_path || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80'}
+                  height={200}
+                  image={getImageUrl(offer.image_path)}
                   alt={offer.name}
+                  sx={{ objectFit: 'cover' }}
                 />
 
                 {/* Discount badge */}

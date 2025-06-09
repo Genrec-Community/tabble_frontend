@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../services/api';
 import {
   Container,
   Paper,
@@ -327,7 +327,7 @@ const CustomerLogin = () => {
 
       try {
         // Check if user exists in our database
-        const response = await axios.post('/customer/api/verify-otp', {
+        const response = await api.post('/customer/api/verify-otp', {
           phone_number: phoneNumber,
           verification_code: otpCode,
           table_number: parseInt(tableNumber)
@@ -378,7 +378,7 @@ const CustomerLogin = () => {
 
     try {
       // Register new user
-      const response = await axios.post('/customer/api/register-phone-user', {
+      const response = await api.post('/customer/api/register-phone-user', {
         phone_number: phoneNumber,
         username: username,
         table_number: parseInt(tableNumber)
